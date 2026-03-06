@@ -1,0 +1,81 @@
+{
+  "backgroundColor": "white",
+  "width": 800,
+  "height": 480,
+  "chart": {
+    "type": "bar",
+    "data": {
+      "labels": ["2020年度\n(参考)", "2021年度\n(参考)", "2022年度\n(参考)", "2023年度\n(実績)", "2024年度\n(実績)"],
+      "datasets": [
+        {
+          "label": "ソフトウェア業倒産件数",
+          "data": [80, 90, 105, 154, 220],
+          "backgroundColor": [
+            "rgba(156, 163, 175, 0.6)",
+            "rgba(156, 163, 175, 0.6)",
+            "rgba(156, 163, 175, 0.6)",
+            "rgba(251, 146, 60, 0.8)",
+            "rgba(220, 38, 38, 0.9)"
+          ],
+          "borderColor": [
+            "rgba(156, 163, 175, 0.8)",
+            "rgba(156, 163, 175, 0.8)",
+            "rgba(156, 163, 175, 0.8)",
+            "rgb(251, 146, 60)",
+            "rgb(220, 38, 38)"
+          ],
+          "borderWidth": 1
+        }
+      ]
+    },
+    "options": {
+      "title": {
+        "display": true,
+        "text": "ソフトウェア業の倒産件数推移（帝国データバンク調査）",
+        "fontSize": 15,
+        "fontColor": "#1F2937"
+      },
+      "scales": {
+        "yAxes": [{
+          "ticks": {
+            "beginAtZero": true,
+            "max": 250
+          },
+          "scaleLabel": {
+            "display": true,
+            "labelString": "倒産件数（件）"
+          },
+          "gridLines": { "color": "rgba(0,0,0,0.05)" }
+        }]
+      },
+      "legend": { "display": false },
+      "plugins": {
+        "datalabels": {
+          "display": true,
+          "anchor": "end",
+          "align": "top",
+          "color": "#374151",
+          "formatter": "function(v){return v+'件'}"
+        }
+      },
+      "annotation": {
+        "annotations": [{
+          "type": "line",
+          "mode": "horizontal",
+          "scaleID": "y-axis-0",
+          "value": 200,
+          "borderColor": "#DC2626",
+          "borderWidth": 1,
+          "borderDash": [6, 3],
+          "label": {
+            "enabled": true,
+            "content": "過去10年初の200件超ライン",
+            "position": "right",
+            "backgroundColor": "rgba(220,38,38,0.1)",
+            "fontColor": "#DC2626"
+          }
+        }]
+      }
+    }
+  }
+}

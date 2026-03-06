@@ -1,0 +1,74 @@
+{
+  "backgroundColor": "white",
+  "width": 800,
+  "height": 560,
+  "chart": {
+    "type": "bubble",
+    "data": {
+      "datasets": [
+        {
+          "label": "A：AI武装した2次請け",
+          "data": [{ "x": 1.5, "y": 2.0, "r": 22 }],
+          "backgroundColor": "rgba(37, 99, 235, 0.75)",
+          "borderColor": "rgb(37, 99, 235)"
+        },
+        {
+          "label": "C：AI実装エンジン化",
+          "data": [{ "x": 2.5, "y": 3.0, "r": 22 }],
+          "backgroundColor": "rgba(5, 150, 105, 0.75)",
+          "borderColor": "rgb(5, 150, 105)"
+        },
+        {
+          "label": "B：専門集団化・上流シフト",
+          "data": [{ "x": 3.5, "y": 4.2, "r": 22 }],
+          "backgroundColor": "rgba(217, 119, 6, 0.75)",
+          "borderColor": "rgb(217, 119, 6)"
+        },
+        {
+          "label": "D：エンドユーザー直接提案",
+          "data": [{ "x": 4.8, "y": 5.0, "r": 22 }],
+          "backgroundColor": "rgba(220, 38, 38, 0.75)",
+          "borderColor": "rgb(220, 38, 38)"
+        }
+      ]
+    },
+    "options": {
+      "title": {
+        "display": true,
+        "text": "4つの戦略オプション：着手難易度 × ビジネス変化度マトリクス",
+        "fontSize": 15,
+        "fontColor": "#1F2937"
+      },
+      "scales": {
+        "xAxes": [{
+          "ticks": { "min": 0, "max": 6, "stepSize": 1 },
+          "scaleLabel": {
+            "display": true,
+            "labelString": "← 着手しやすい　　　　　　着手が難しい →"
+          },
+          "gridLines": { "color": "rgba(0,0,0,0.05)" }
+        }],
+        "yAxes": [{
+          "ticks": { "min": 0, "max": 6, "stepSize": 1 },
+          "scaleLabel": {
+            "display": true,
+            "labelString": "← 変化小　　　　　　ビジネスモデルの変化度　　　変化大 →"
+          },
+          "gridLines": { "color": "rgba(0,0,0,0.05)" }
+        }]
+      },
+      "legend": {
+        "display": true,
+        "position": "bottom"
+      },
+      "plugins": {
+        "datalabels": {
+          "display": true,
+          "color": "white",
+          "font": { "weight": "bold", "size": 14 },
+          "formatter": "function(v,ctx){return ctx.dataset.label.charAt(0)}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "backgroundColor": "white",
+  "width": 800,
+  "height": 480,
+  "chart": {
+    "type": "horizontalBar",
+    "data": {
+      "labels": [
+        "AIサイエンティスト求人",
+        "機械学習エンジニア求人",
+        "モバイル/フロントエンド求人",
+        "ソフトウェア開発者雇用",
+        "プログラマー職雇用"
+      ],
+      "datasets": [
+        {
+          "label": "変化率（%、2022-2025年）",
+          "data": [80, 70, -20, -10, -27.5],
+          "backgroundColor": [
+            "rgba(22, 163, 74, 0.8)",
+            "rgba(22, 163, 74, 0.8)",
+            "rgba(220, 38, 38, 0.8)",
+            "rgba(220, 38, 38, 0.8)",
+            "rgba(220, 38, 38, 0.8)"
+          ],
+          "borderColor": [
+            "rgb(22, 163, 74)",
+            "rgb(22, 163, 74)",
+            "rgb(220, 38, 38)",
+            "rgb(220, 38, 38)",
+            "rgb(220, 38, 38)"
+          ],
+          "borderWidth": 1
+        }
+      ]
+    },
+    "options": {
+      "title": {
+        "display": true,
+        "text": "エンジニア需要の二極化（米国 BLS/求人データ 2022-2025年実績）",
+        "fontSize": 15,
+        "fontColor": "#1F2937"
+      },
+      "scales": {
+        "xAxes": [{
+          "ticks": { "min": -40, "max": 100 },
+          "scaleLabel": {
+            "display": true,
+            "labelString": "変化率（%）"
+          },
+          "gridLines": {
+            "color": "rgba(0,0,0,0.05)",
+            "zeroLineColor": "#374151",
+            "zeroLineWidth": 2
+          }
+        }]
+      },
+      "legend": { "display": false },
+      "plugins": {
+        "datalabels": {
+          "display": true,
+          "anchor": "end",
+          "align": "right",
+          "color": "#374151",
+          "formatter": "function(v){return (v>0?'+':'')+v+'%'}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "backgroundColor": "white",
+  "width": 800,
+  "height": 480,
+  "chart": {
+    "type": "bar",
+    "data": {
+      "labels": ["Accenture\nGenAI受注", "Accenture\nGenAI売上", "TCS\n人員削減", "IBM\nAI代替削減", "インドSIer5社\n時価総額損失"],
+      "datasets": [
+        {
+          "label": "AI活用で急拡大",
+          "data": [59, 27, null, null, null],
+          "backgroundColor": "rgba(22, 163, 74, 0.8)",
+          "borderColor": "rgb(22, 163, 74)",
+          "borderWidth": 1
+        },
+        {
+          "label": "AIで縮小・削減（千人/十億ドル）",
+          "data": [null, null, 12, 8, 150],
+          "backgroundColor": "rgba(220, 38, 38, 0.8)",
+          "borderColor": "rgb(220, 38, 38)",
+          "borderWidth": 1
+        }
+      ]
+    },
+    "options": {
+      "title": {
+        "display": true,
+        "text": "グローバルIT企業 AI転換の明暗（2025年実績）",
+        "fontSize": 16,
+        "fontColor": "#1F2937"
+      },
+      "scales": {
+        "yAxes": [{
+          "gridLines": { "color": "rgba(0,0,0,0.05)" }
+        }]
+      },
+      "legend": {
+        "display": true,
+        "position": "bottom"
+      },
+      "plugins": {
+        "datalabels": {
+          "display": true,
+          "anchor": "end",
+          "align": "top",
+          "color": "#374151"
+        }
+      }
+    }
+  }
+}
