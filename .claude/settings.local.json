@@ -1,11 +1,26 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git -C \"c:/Users/suzuk/work/claudecode\" status)",
-      "Bash(git -C \"c:/Users/suzuk/work/claudecode\" log --oneline -5)",
-      "Bash(git --version)",
-      "Bash(gh --version)",
-      "Bash(git -C \"c:/Users/suzuk/work/claudecode\" init)"
+      "Bash(*)",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(rm -r /*)",
+      "Bash(sudo rm *)",
+      "Bash(dd *)",
+      "Bash(mkfs *)",
+      "Bash(fdisk *)",
+      "Bash(format *)",
+      "Bash(git push --force *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean -f *)",
+      "Bash(chmod -R 777 *)",
+      "Bash(curl * | sh)",
+      "Bash(wget * | sh)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | bash)"
     ]
   }
 }
