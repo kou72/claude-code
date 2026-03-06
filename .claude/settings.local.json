@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"c:/Users/suzuk/work/claudecode\" status)",
+      "Bash(git -C \"c:/Users/suzuk/work/claudecode\" log --oneline -5)",
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(git -C \"c:/Users/suzuk/work/claudecode\" init)"
+    ]
+  }
+}
