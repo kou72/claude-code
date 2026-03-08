@@ -1,0 +1,56 @@
+{
+  "backgroundColor": "white",
+  "width": 800,
+  "height": 400,
+  "chart": {
+    "type": "bar",
+    "data": {
+      "labels": ["TCS\n（2025年7月）", "Accenture\n（2025年9月）", "IBM\n（2025年推定）"],
+      "datasets": [
+        {
+          "label": "削減人数（千人）",
+          "data": [12, 11, 8],
+          "backgroundColor": [
+            "rgba(220, 38, 38, 0.8)",
+            "rgba(251, 146, 60, 0.8)",
+            "rgba(251, 146, 60, 0.8)"
+          ],
+          "borderColor": [
+            "rgb(220, 38, 38)",
+            "rgb(251, 146, 60)",
+            "rgb(251, 146, 60)"
+          ],
+          "borderWidth": 1
+        }
+      ]
+    },
+    "options": {
+      "title": {
+        "display": true,
+        "text": "グローバルIT大手の人員削減規模（単位：千人）",
+        "fontSize": 15,
+        "fontColor": "#1F2937"
+      },
+      "scales": {
+        "yAxes": [{
+          "ticks": { "beginAtZero": true, "max": 16 },
+          "scaleLabel": {
+            "display": true,
+            "labelString": "削減人数（千人）"
+          },
+          "gridLines": { "color": "rgba(0,0,0,0.05)" }
+        }]
+      },
+      "legend": { "display": false },
+      "plugins": {
+        "datalabels": {
+          "display": true,
+          "anchor": "end",
+          "align": "top",
+          "color": "#374151",
+          "formatter": "function(v){return v+'千人'}"
+        }
+      }
+    }
+  }
+}

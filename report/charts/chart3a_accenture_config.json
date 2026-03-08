@@ -1,0 +1,55 @@
+{
+  "backgroundColor": "white",
+  "width": 800,
+  "height": 400,
+  "chart": {
+    "type": "bar",
+    "data": {
+      "labels": ["生成AI受注額", "生成AI売上額"],
+      "datasets": [
+        {
+          "label": "FY2025実績（億ドル）",
+          "data": [59, 27],
+          "backgroundColor": ["rgba(22, 163, 74, 0.8)", "rgba(16, 185, 129, 0.8)"],
+          "borderColor": ["rgb(22, 163, 74)", "rgb(16, 185, 129)"],
+          "borderWidth": 1
+        },
+        {
+          "label": "FY2024実績（億ドル、参考）",
+          "data": [29.5, 9],
+          "backgroundColor": ["rgba(22, 163, 74, 0.3)", "rgba(16, 185, 129, 0.3)"],
+          "borderColor": ["rgb(22, 163, 74)", "rgb(16, 185, 129)"],
+          "borderWidth": 1
+        }
+      ]
+    },
+    "options": {
+      "title": {
+        "display": true,
+        "text": "Accenture 生成AI事業の成長（単位：億ドル）",
+        "fontSize": 15,
+        "fontColor": "#1F2937"
+      },
+      "scales": {
+        "yAxes": [{
+          "ticks": { "beginAtZero": true, "max": 80 },
+          "scaleLabel": {
+            "display": true,
+            "labelString": "金額（億ドル）"
+          },
+          "gridLines": { "color": "rgba(0,0,0,0.05)" }
+        }]
+      },
+      "legend": { "display": true, "position": "bottom" },
+      "plugins": {
+        "datalabels": {
+          "display": true,
+          "anchor": "end",
+          "align": "top",
+          "color": "#374151",
+          "formatter": "function(v){return v+'億ドル'}"
+        }
+      }
+    }
+  }
+}

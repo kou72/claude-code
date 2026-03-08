@@ -209,7 +209,10 @@ fi
 
 - `curl -d '...'` で日本語を直接渡すとJSONパースエラーになる → 必ずファイル経由
 - axisのticksに `callback: function(){...}` は使えない → 単位はラベル（`scaleLabel.labelString`）に移す
-- `datalabels.formatter` の関数文字列は動作する（`"function(v){return v+'件'}"` 形式）
+- `datalabels.formatter` の関数文字列は棒グラフでは動作するが、**バブルチャートでは `ctx.dataset.label` や `ctx.datasetIndex` が正常に参照できない場合がある** → バブルチャートの datalabels は `"display": false` にして凡例で代替する
+- annotation プラグインのテキストは描画されないことがある → 参照ラインは `type: "line"` の追加データセットで代替する
+- **1つのグラフに異なる単位・指標を混在させない**（例：金額と人数を同じ棒グラフに入れない）→ 指標ごとに別グラフに分割する
+- グラフ生成後は必ず画像を Read ツールで確認し、文字化け・見切れ・ラベル欠損がないか目視チェックする
 
 **リトライ時のチェックポイント：**
 
@@ -217,17 +220,30 @@ fi
 2. 数値型の箇所に文字列が入っていないか
 3. callbackなど非対応のオプションを使っていないか
 
-#### Mermaid図
+#### Mermaid図の画像化（kroki.io）
 
-フロー・因果関係の可視化に使う。Markdownにそのまま埋め込む。
+Mermaidはレンダラー依存のため、画像に変換して埋め込む。
 
-````markdown
-```mermaid
+```bash
+# Mermaidコードをファイルに保存
+cat > diagram.mmd << 'EOF'
 flowchart TD
-    A["原因"] --> B["結果"]
-    B --> C["影響"]
+    A[原因] --> B[結果]
+    B --> C[影響]
+EOF
+
+# kroki.io でPNG生成（APIキー不要）
+curl -s -X POST https://kroki.io/mermaid/png \
+  -H "Content-Type: text/plain" \
+  --data-binary @diagram.mmd \
+  -o output.png
 ```
-````
+
+**制約：**
+
+- ノードラベル内の `\n` は改行にならない → ラベルは短く書く
+- 日本語は問題なく動作する
+- mermaid.ink は不安定なため kroki.io を優先する
 
 #### Markdownへの埋め込み
 

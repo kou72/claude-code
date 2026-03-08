@@ -1,0 +1,75 @@
+{
+  "backgroundColor": "white",
+  "width": 800,
+  "height": 500,
+  "chart": {
+    "type": "bar",
+    "data": {
+      "labels": ["2020年度\n(参考)", "2021年度\n(参考)", "2022年度\n(参考)", "2023年度\n(実績)", "2024年度\n(実績)"],
+      "datasets": [
+        {
+          "type": "bar",
+          "label": "ソフトウェア業倒産件数",
+          "data": [80, 90, 105, 154, 220],
+          "backgroundColor": [
+            "rgba(156, 163, 175, 0.6)",
+            "rgba(156, 163, 175, 0.6)",
+            "rgba(156, 163, 175, 0.6)",
+            "rgba(251, 146, 60, 0.8)",
+            "rgba(220, 38, 38, 0.9)"
+          ],
+          "borderColor": [
+            "rgba(156, 163, 175, 0.8)",
+            "rgba(156, 163, 175, 0.8)",
+            "rgba(156, 163, 175, 0.8)",
+            "rgb(251, 146, 60)",
+            "rgb(220, 38, 38)"
+          ],
+          "borderWidth": 1
+        },
+        {
+          "type": "line",
+          "label": "200件ライン（過去10年初の超過水準）",
+          "data": [200, 200, 200, 200, 200],
+          "borderColor": "rgb(220, 38, 38)",
+          "borderWidth": 2,
+          "borderDash": [8, 4],
+          "pointRadius": 0,
+          "fill": false,
+          "backgroundColor": "transparent"
+        }
+      ]
+    },
+    "options": {
+      "title": {
+        "display": true,
+        "text": "ソフトウェア業の倒産件数推移（帝国データバンク調査）",
+        "fontSize": 15,
+        "fontColor": "#1F2937"
+      },
+      "scales": {
+        "yAxes": [{
+          "ticks": { "beginAtZero": true, "max": 260 },
+          "scaleLabel": {
+            "display": true,
+            "labelString": "倒産件数（件）"
+          },
+          "gridLines": { "color": "rgba(0,0,0,0.05)" }
+        }]
+      },
+      "legend": {
+        "display": true,
+        "position": "bottom"
+      },
+      "plugins": {
+        "datalabels": {
+          "display": "function(ctx){return ctx.datasetIndex===0 && ctx.dataIndex < 5}",
+          "anchor": "end",
+          "align": "top",
+          "color": "#374151",
+          "formatter": "function(v){return v+'件'}"
+        }
+      }
+    }
+  }
+}
