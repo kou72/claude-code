@@ -1,32 +1,44 @@
 {
   "backgroundColor": "white",
   "width": 800,
-  "height": 640,
+  "height": 680,
   "chart": {
     "type": "bubble",
     "data": {
       "datasets": [
         {
           "label": "A: AI武装した2次請け",
-          "data": [{ "x": 1.5, "y": 2.0, "r": 30 }],
+          "data": [{ "x": 1.5, "y": 1.8, "r": 26 }],
           "backgroundColor": "rgba(37, 99, 235, 0.8)",
           "borderColor": "rgb(37, 99, 235)"
         },
         {
           "label": "C: AI実装エンジン化",
-          "data": [{ "x": 2.5, "y": 3.0, "r": 30 }],
+          "data": [{ "x": 2.2, "y": 3.0, "r": 26 }],
           "backgroundColor": "rgba(5, 150, 105, 0.8)",
           "borderColor": "rgb(5, 150, 105)"
         },
         {
+          "label": "E: ソリューション・成果報酬型",
+          "data": [{ "x": 2.8, "y": 3.8, "r": 26 }],
+          "backgroundColor": "rgba(124, 58, 237, 0.8)",
+          "borderColor": "rgb(124, 58, 237)"
+        },
+        {
           "label": "B: 専門集団化・上流シフト",
-          "data": [{ "x": 3.5, "y": 4.2, "r": 30 }],
+          "data": [{ "x": 3.6, "y": 4.5, "r": 26 }],
           "backgroundColor": "rgba(217, 119, 6, 0.8)",
           "borderColor": "rgb(217, 119, 6)"
         },
         {
+          "label": "F: AI×人材育成事業",
+          "data": [{ "x": 4.2, "y": 4.8, "r": 26 }],
+          "backgroundColor": "rgba(236, 72, 153, 0.8)",
+          "borderColor": "rgb(236, 72, 153)"
+        },
+        {
           "label": "D: エンドユーザー直接提案",
-          "data": [{ "x": 4.5, "y": 5.0, "r": 30 }],
+          "data": [{ "x": 5.2, "y": 5.5, "r": 26 }],
           "backgroundColor": "rgba(220, 38, 38, 0.8)",
           "borderColor": "rgb(220, 38, 38)"
         }
@@ -35,7 +47,7 @@
     "options": {
       "title": {
         "display": true,
-        "text": "4つの戦略オプション：着手難易度 × ビジネス変化度",
+        "text": "6つの戦略オプション：着手難易度 × ビジネス変化度",
         "fontSize": 15,
         "fontColor": "#1F2937"
       },
