@@ -5,3 +5,4 @@
 @rules/report.md
 @rules/pptx.md
 @rules/product.md
+@rules/diagram.md
