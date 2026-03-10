@@ -3,3 +3,4 @@
 @rules/git.md
 @rules/markdown.md
 @rules/report.md
+@rules/pptx.md
