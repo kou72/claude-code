@@ -4,3 +4,4 @@
 @rules/markdown.md
 @rules/report.md
 @rules/pptx.md
+@rules/product.md
