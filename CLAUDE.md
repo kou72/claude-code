@@ -6,3 +6,4 @@
 @rules/pptx.md
 @rules/product.md
 @rules/diagram.md
+@rules/chat_output.md

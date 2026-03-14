@@ -7,12 +7,13 @@ SESプラットフォーム設計文書（2026年3月）の作図改善作業を
 
 ## ツール選定基準
 
+**原則：図は Graphviz DOT（kroki.io）で生成する。** Mermaid はラベル折り返し・絵文字文字化け・レイアウト制御の制約が多く、Graphviz の方が安定して読みやすい図が得られる。
+
 | 用途 | ツール | 理由 |
 | ---- | ------ | ---- |
-| フローチャート・シーケンス図 | Mermaid（kroki.io） | シンプルな構造に向く |
-| グループ・クラスタを含む複雑な関係図 | Graphviz DOT（kroki.io） | subgraph の枠・色・compound arrow が正確に描画される |
+| フローチャート・関係図・プロセス図 | **Graphviz DOT（kroki.io）** | ボックス幅が自動でテキストに合う、レイアウト制御が確実 |
 | 数値データ・グラフ | Chart.js（quickchart.io） | v3 を使用、datalabels でバー上に数値を直接表示 |
-| プロセスフロー・因果関係 | Mermaid または Graphviz | 複雑さに応じて選択 |
+| Mermaid を使うケース | なし（原則使わない） | — |
 
 ---
 
@@ -86,6 +87,7 @@ if [ "$size" -lt 5000 ]; then cat output.png; fi   # エラーレスポンスを
 | ラベル内の `\n` がリテラル表示される | デフォルトは htmlLabels 無効 | `%%{init: {'flowchart': {'htmlLabels': true}}}%%` を追加し `<br/>` を使う |
 | アイコン文字（絵文字）が `[]` で表示される | フォントに依存 | 絵文字を使わず、テキストのみにする |
 | subgraph の枠・背景色が消える | Mermaid の制約 | 複雑なグループ図は Graphviz に切り替える |
+| LR レイアウトでも長いラベルが折り返す | ボックス幅がノードサイズに依存 | Graphviz に切り替える（`shape=box` でテキストに合わせてボックスが広がる） |
 
 ### Graphviz
 
