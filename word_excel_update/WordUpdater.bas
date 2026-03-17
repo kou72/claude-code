@@ -182,12 +182,17 @@ Private Function ProcessSheet(ws As Worksheet, wdApp As Object, _
         Call CreateFolderRecursive(outputDir)
     End If
 
-    ' テーブル取得
+    ' テーブル取得（名前一致を優先、なければシート内の最初のテーブルを使用）
     On Error Resume Next
     Set tbl = ws.ListObjects(TABLE_NAME)
     On Error GoTo 0
     If tbl Is Nothing Then
-        ProcessSheet = "テーブル「" & TABLE_NAME & "」が見つかりません"
+        If ws.ListObjects.Count > 0 Then
+            Set tbl = ws.ListObjects(1)
+        End If
+    End If
+    If tbl Is Nothing Then
+        ProcessSheet = "変数テーブルが見つかりません（シートにテーブルがありません）"
         Exit Function
     End If
     If tbl.ListRows.Count = 0 Then
