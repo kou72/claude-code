@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # setup.ps1
 # Excel 更新ツール（Word更新ツール.xlsm）を自動生成するスクリプト
 #
@@ -27,8 +27,9 @@ Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "出力先: $OutputPath" -ForegroundColor Gray
 Write-Host ""
 
-# ---- Excel COM オブジェクト起動 ----
 $excel = $null
+$vbaImported = $false
+
 try {
     $excel = New-Object -ComObject Excel.Application
     $excel.Visible = $false
@@ -36,7 +37,7 @@ try {
 
     $workbook = $excel.Workbooks.Add()
 
-    # 既存シートを削除（1枚だけ残す）
+    # シートを1枚だけ残す
     while ($workbook.Worksheets.Count -gt 1) {
         $workbook.Worksheets.Item($workbook.Worksheets.Count).Delete()
     }
@@ -45,126 +46,85 @@ try {
     $sheet.Name = "変更箇所"
 
     # ============================================================
-    # レイアウト設定
+    # 行1: Word ファイルパス入力欄
+    # ============================================================
+    $labelCell = $sheet.Cells.Item(1, 1)
+    $labelCell.Value2 = "Wordファイルパス："
+    $labelCell.Font.Bold = $true
+
+    $pathRange = $sheet.Range("B1:G1")
+    $pathRange.Merge()
+    $pathRange.Value2 = "C:\Users\username\Documents\テンプレート.docx"
+    $pathRange.Font.Color = [int]0x333333
+
+    # ============================================================
+    # 行2: 注釈
+    # ============================================================
+    $noteRange = $sheet.Range("A2:G2")
+    $noteRange.Merge()
+    $noteRange.Value2 = "※ Word テンプレートの変数は `$変数名 の形式で赤字にしておいてください。置換後も赤字のまま維持されます。"
+    $noteRange.Font.Color = [int]0x888888
+    $noteRange.Font.Size = 9
+    $noteRange.Font.Italic = $true
+
+    # ============================================================
+    # 行4〜: 変数テーブル（Excel テーブル形式）
     # ============================================================
 
-    # ---- 行1: Wordファイルパス ----
-    $cell = $sheet.Cells.Item(1, 1)
-    $cell.Value2 = "Wordファイルパス："
-    $cell.Font.Bold = $true
-    $cell.Font.Size = 11
-
-    $mergeRange = $sheet.Range("B1:F1")
-    $mergeRange.Merge()
-    $mergeRange.Value2 = "C:\Users\username\Documents\納品物.docx"
-    $mergeRange.Font.Color = [int]0x333333
-
-    # ---- 行2: 補足説明 ----
-    $sheet.Range("A2:F2").Merge()
-    $noteCell = $sheet.Cells.Item(2, 1)
-    $noteCell.Value2 = "※ B1 に Word ファイルの絶対パスを入力してください。Word テンプレートの変数は $変数名 の形式で赤字にしておいてください。"
-    $noteCell.Font.Color = [int]0x888888
-    $noteCell.Font.Size = 9
-    $noteCell.Font.Italic = $true
-
-    # ---- 行3: ヘッダー ----
-    $headers = @("変数名（`$xxx）", "説明（任意）", "変更後テキスト", "状態")
-    $headerBgColor = [int]0x4472C4
-    $headerFontColor = [int]0xFFFFFF
-
-    for ($col = 1; $col -le $headers.Length; $col++) {
-        $hCell = $sheet.Cells.Item(3, $col)
-        $hCell.Value2 = $headers[$col - 1]
-        $hCell.Font.Bold = $true
-        $hCell.Font.Color = $headerFontColor
-        $hCell.Interior.Color = $headerBgColor
-        $hCell.HorizontalAlignment = -4108  # xlCenter
-        $hCell.VerticalAlignment   = -4108  # xlCenter
-        $hCell.RowHeight = 22
-    }
-
-    # ---- 行4〜6: サンプルデータ ----
+    # サンプルデータをセルに書き込む
+    $dataStart = 4
     $samples = @(
-        @("`$company_name", "会社名",   "株式会社サンプル商事"),
-        @("`$date",         "契約日付", "2026年4月1日"),
-        @("`$amount",       "契約金額", "1,500,000円（税込）")
+        @('$company_name', "会社名",   "株式会社サンプル商事"),
+        @('$date',         "契約日付", "2026年4月1日"),
+        @('$amount',       "契約金額", "1,500,000円（税込）")
     )
 
-    $row = 4
-    foreach ($s in $samples) {
-        $sheet.Cells.Item($row, 1).Value2 = $s[0]
-        $sheet.Cells.Item($row, 2).Value2 = $s[1]
-        $sheet.Cells.Item($row, 3).Value2 = $s[2]
-        if ($row % 2 -eq 0) {
-            $sheet.Range("A${row}:D${row}").Interior.Color = [int]0xF2F7FF
-        }
-        $row++
+    # ヘッダー行（行4）
+    $sheet.Cells.Item($dataStart, 1).Value2 = "変数名（`$xxx）"
+    $sheet.Cells.Item($dataStart, 2).Value2 = "説明（任意）"
+    $sheet.Cells.Item($dataStart, 3).Value2 = "変更後テキスト"
+
+    # データ行（行5〜7）
+    for ($r = 0; $r -lt $samples.Length; $r++) {
+        $row = $dataStart + 1 + $r
+        $sheet.Cells.Item($row, 1).Value2 = $samples[$r][0]
+        $sheet.Cells.Item($row, 2).Value2 = $samples[$r][1]
+        $sheet.Cells.Item($row, 3).Value2 = $samples[$r][2]
     }
 
-    # ---- 列幅調整 ----
-    $sheet.Columns.Item(1).ColumnWidth = 25
-    $sheet.Columns.Item(2).ColumnWidth = 18
-    $sheet.Columns.Item(3).ColumnWidth = 45
-    $sheet.Columns.Item(4).ColumnWidth = 8
+    # Excel テーブルとして定義（ヘッダー込みの範囲）
+    $lastDataRow = $dataStart + $samples.Length
+    $tableRange = $sheet.Range("A${dataStart}:C${lastDataRow}")
+    $table = $sheet.ListObjects.Add(1, $tableRange, [System.Type]::Missing, 1)
+    $table.Name = "変数テーブル"
+    $table.TableStyle = "TableStyleMedium2"
 
-    # ---- ウィンドウ枠の固定（3行目まで固定）----
-    $sheet.Activate()
-    $excel.ActiveWindow.SplitRow = 3
-    $excel.ActiveWindow.FreezePanes = $true
-
-    # ============================================================
-    # ボタン追加
-    # ============================================================
-
-    # 「Word を更新」ボタン
-    $btnUpdate = $sheet.Shapes.AddShape(1, 280, 4, 130, 26)
-    $btnUpdate.Name = "btnUpdate"
-    $btnUpdate.TextFrame.Characters().Text = "Word を更新"
-    $btnUpdate.TextFrame.Characters().Font.Bold = $true
-    $btnUpdate.TextFrame.Characters().Font.Size = 10
-    $btnUpdate.TextFrame.Characters().Font.Color = [int]0xFFFFFF
-    $btnUpdate.Fill.ForeColor.RGB = [int]0x4472C4
-    $btnUpdate.Line.ForeColor.RGB = [int]0x2E5B9E
-    $btnUpdate.Line.Weight = 1
-    $btnUpdate.TextFrame.HorizontalAlignment = -4108
-    $btnUpdate.TextFrame.VerticalAlignment   = -4108
-    $btnUpdate.OnAction = "WordUpdater.UpdateWordDocument"
-
-    # 「状態リセット」ボタン
-    $btnReset = $sheet.Shapes.AddShape(1, 420, 4, 110, 26)
-    $btnReset.Name = "btnReset"
-    $btnReset.TextFrame.Characters().Text = "状態リセット"
-    $btnReset.TextFrame.Characters().Font.Size = 9
-    $btnReset.TextFrame.Characters().Font.Color = [int]0xFFFFFF
-    $btnReset.Fill.ForeColor.RGB = [int]0x808080
-    $btnReset.Line.ForeColor.RGB = [int]0x606060
-    $btnReset.Line.Weight = 1
-    $btnReset.TextFrame.HorizontalAlignment = -4108
-    $btnReset.TextFrame.VerticalAlignment   = -4108
-    $btnReset.OnAction = "WordUpdater.ResetStatus"
-
-    # 「$変数一覧取得」ボタン
-    $btnImport = $sheet.Shapes.AddShape(1, 540, 4, 150, 26)
-    $btnImport.Name = "btnImport"
-    $btnImport.TextFrame.Characters().Text = "`$変数一覧取得"
-    $btnImport.TextFrame.Characters().Font.Size = 9
-    $btnImport.TextFrame.Characters().Font.Color = [int]0xFFFFFF
-    $btnImport.Fill.ForeColor.RGB = [int]0x538135
-    $btnImport.Line.ForeColor.RGB = [int]0x3B5E26
-    $btnImport.Line.Weight = 1
-    $btnImport.TextFrame.HorizontalAlignment = -4108
-    $btnImport.TextFrame.VerticalAlignment   = -4108
-    $btnImport.OnAction = "WordUpdater.ImportVariableList"
+    # 列幅
+    $table.ListColumns.Item(1).Range.ColumnWidth = 22
+    $table.ListColumns.Item(2).Range.ColumnWidth = 18
+    $table.ListColumns.Item(3).Range.ColumnWidth = 45
 
     # ============================================================
-    # VBA マクロコードを追加
+    # 「Word を更新」ボタン（行1 右側に配置）
+    # ============================================================
+    $btn = $sheet.Shapes.AddShape(1, 380, 3, 130, 22)
+    $btn.Name = "btnUpdate"
+    $btn.TextFrame.Characters().Text = "Word を更新"
+    $btn.TextFrame.Characters().Font.Bold = $true
+    $btn.TextFrame.Characters().Font.Size = 10
+    $btn.TextFrame.Characters().Font.Color = [int]0xFFFFFF
+    $btn.Fill.ForeColor.RGB = [int]0x4472C4
+    $btn.Line.ForeColor.RGB = [int]0x2E5B9E
+    $btn.Line.Weight = 1
+    $btn.TextFrame.HorizontalAlignment = -4108   # xlCenter
+    $btn.TextFrame.VerticalAlignment   = -4108   # xlCenter
+    $btn.OnAction = "WordUpdater.UpdateWordDocument"
+
+    # ============================================================
+    # VBA マクロを埋め込む
     # ============================================================
     $basFilePath = Join-Path $scriptDir "WordUpdater.bas"
-    $vbaImported = $false
     if (Test-Path $basFilePath) {
-        # VBProject へのアクセスを試みる
-        # 失敗する場合は Excel のセキュリティ設定で
-        # 「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」を有効にしてください
         try {
             if ($null -eq $workbook.VBProject) {
                 throw "VBProject が null です。"
@@ -172,7 +132,7 @@ try {
             $vbaCode = [System.IO.File]::ReadAllText($basFilePath, [System.Text.Encoding]::GetEncoding(932))
             $vbaCode = $vbaCode -replace 'Attribute VB_Name = "WordUpdater"\r?\n', ''
 
-            $vbaModule = $workbook.VBProject.VBComponents.Add(1)  # vbext_ct_StdModule
+            $vbaModule = $workbook.VBProject.VBComponents.Add(1)   # vbext_ct_StdModule
             $vbaModule.Name = "WordUpdater"
             $vbaModule.CodeModule.AddFromString($vbaCode)
             $vbaImported = $true
@@ -189,7 +149,7 @@ try {
             Write-Host "    4. [VBA プロジェクト オブジェクト モデルへのアクセスを信頼する] にチェック"
             Write-Host "    5. OK で閉じて、再度 setup.ps1 を実行"
             Write-Host ""
-            Write-Host "  または、Excel ファイルを開いた後に手動でマクロをインポートできます:"
+            Write-Host "  または、Excel を開いた後に手動でインポートしてください:"
             Write-Host "    Alt+F11 → ファイル → ファイルのインポート → WordUpdater.bas"
             Write-Host ""
         }
@@ -198,9 +158,9 @@ try {
     }
 
     # ============================================================
-    # .xlsm として保存
+    # 保存
     # ============================================================
-    $workbook.SaveAs($OutputPath, 52)  # 52 = xlOpenXMLWorkbookMacroEnabled
+    $workbook.SaveAs($OutputPath, 52)   # 52 = xlOpenXMLWorkbookMacroEnabled
     Write-Host "ファイルを作成しました: $OutputPath" -ForegroundColor Green
 
 } catch {
@@ -233,7 +193,6 @@ if (-not $vbaImported) {
 Write-Host "  1. Word テンプレートに変数を設定"
 Write-Host "     例: 会社名の箇所を `$company_name と書き、赤字にしておく"
 Write-Host "  2. Word更新ツール.xlsm の B1 に Word ファイルのパスを入力"
-Write-Host "  3. [$変数一覧取得] で変数を自動取り込み（または A列に手入力）"
-Write-Host "  4. C列に変更後テキストを入力"
-Write-Host "  5. [Word を更新] ボタンをクリック"
+Write-Host "  3. テーブルの A列に `$変数名、C列に変更後テキストを入力"
+Write-Host "  4. [Word を更新] ボタンをクリック"
 Write-Host ""
