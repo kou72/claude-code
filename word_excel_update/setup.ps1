@@ -82,7 +82,7 @@ try {
     )
 
     $r = Write-Section $r "■ Word テンプレートの準備" @(
-        "1. Word で納品物のテンプレートを作成する",
+        "1. Word でテンプレートシートを作成する",
         "2. 差し替えたい箇所を `$変数名 の形式で記述する",
         "   例:  会社名の箇所 → `$company_name",
         "        日付の箇所   → `$date",
@@ -94,9 +94,9 @@ try {
     $r = Write-Section $r "■ 毎回の操作手順" @(
         "1. 「変更箇所」シートを開く",
         "2. B1 にテンプレートファイルの絶対パスを入力",
-        "   例: C:\Users\username\Documents\template\納品書_テンプレート.docx",
+        "   例: C:\Users\username\Documents\template\ドキュメント_テンプレート.docx",
         "3. B2 に出力ファイルの絶対パスを入力（新しいファイル名を指定）",
-        "   例: C:\Users\username\Documents\output\納品書_株式会社ABC_20260401.docx",
+        "   例: C:\Users\username\Documents\output\ドキュメント_株式会社ABC_20260401.docx",
         "4. テーブルに変数と変更後テキストを入力",
         "   A列: `$変数名（例: `$company_name）",
         "   C列: 変更後テキスト（例: 株式会社ABC）",
@@ -107,17 +107,7 @@ try {
         "1. テンプレートファイルを出力ファイル名でコピー",
         "2. コピーしたファイルを Word で開く",
         "3. テーブルの `$変数 を一括置換（書式はそのまま維持）",
-        "4. 保存して完了",
-        "",
-        "→ テンプレートファイルは変更されません"
-    )
-
-    $r = Write-Section $r "■ 変数の命名規則" @(
-        "・$ で始める（例: `$company_name）",
-        "・半角英数字とアンダースコアのみ使用可",
-        "・スペース・日本語は使用不可",
-        "",
-        "例: `$company_name / `$date / `$amount / `$project_title / `$delivery_date"
+        "4. 保存して完了"
     )
 
     # 列幅調整
