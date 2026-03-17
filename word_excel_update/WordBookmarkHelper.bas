@@ -1,4 +1,4 @@
-Attribute VB_Name = "WordBookmarkHelper"
+﻿Attribute VB_Name = "WordBookmarkHelper"
 ' ============================================================
 ' WordBookmarkHelper.bas
 ' Word 側のブックマーク管理ヘルパーマクロ

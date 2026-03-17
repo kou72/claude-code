@@ -1,4 +1,4 @@
-Attribute VB_Name = "WordUpdater"
+﻿Attribute VB_Name = "WordUpdater"
 ' ============================================================
 ' WordUpdater.bas
 ' Excel から Word の指定箇所を赤字で更新するマクロ

@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # setup.ps1
 # Excel 更新ツール（Word更新ツール.xlsm）を自動生成するスクリプト
 #
@@ -12,6 +12,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # 出力先の決定
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -53,29 +54,23 @@ try {
     $cell.Font.Bold = $true
     $cell.Font.Size = 11
 
-    $pathCell = $sheet.Cells.Item(1, 2)
-    $pathCell.Value2 = "C:\Users\username\Documents\納品物.docx"
-    $pathCell.Font.Color = [int]0x666666
-    $pathCell.Font.Italic = $true
-
-    # B1:E1 を結合してパス入力用に広げる
     $mergeRange = $sheet.Range("B1:F1")
     $mergeRange.Merge()
+    $mergeRange.Value2 = "C:\Users\username\Documents\納品物.docx"
     $mergeRange.Font.Color = [int]0x333333
-    $mergeRange.Font.Italic = $false
 
     # ---- 行2: 補足説明 ----
+    $sheet.Range("A2:F2").Merge()
     $noteCell = $sheet.Cells.Item(2, 1)
     $noteCell.Value2 = "※ B1 に Word ファイルの絶対パスを入力してください。ブックマーク名は Word 側で事前に設定が必要です。"
     $noteCell.Font.Color = [int]0x888888
     $noteCell.Font.Size = 9
     $noteCell.Font.Italic = $true
-    $sheet.Range("A2:F2").Merge()
 
     # ---- 行3: ヘッダー ----
     $headers = @("ブックマーク名", "説明（任意）", "変更後テキスト", "状態")
-    $headerBgColor = [int]0x4472C4   # 青系
-    $headerFontColor = [int]0xFFFFFF # 白
+    $headerBgColor = [int]0x4472C4
+    $headerFontColor = [int]0xFFFFFF
 
     for ($col = 1; $col -le $headers.Length; $col++) {
         $hCell = $sheet.Cells.Item(3, $col)
@@ -84,7 +79,7 @@ try {
         $hCell.Font.Color = $headerFontColor
         $hCell.Interior.Color = $headerBgColor
         $hCell.HorizontalAlignment = -4108  # xlCenter
-        $hCell.VerticalAlignment  = -4108   # xlCenter
+        $hCell.VerticalAlignment   = -4108  # xlCenter
         $hCell.RowHeight = 22
     }
 
@@ -100,8 +95,6 @@ try {
         $sheet.Cells.Item($row, 1).Value2 = $s[0]
         $sheet.Cells.Item($row, 2).Value2 = $s[1]
         $sheet.Cells.Item($row, 3).Value2 = $s[2]
-
-        # 偶数行に薄い背景色
         if ($row % 2 -eq 0) {
             $sheet.Range("A${row}:D${row}").Interior.Color = [int]0xF2F7FF
         }
@@ -124,9 +117,9 @@ try {
     # ============================================================
 
     # 「Word を更新」ボタン
-    $btnUpdate = $sheet.Shapes.AddShape(1, 280, 4, 130, 26)  # msoShapeRectangle
+    $btnUpdate = $sheet.Shapes.AddShape(1, 280, 4, 130, 26)
     $btnUpdate.Name = "btnUpdate"
-    $btnUpdate.TextFrame.Characters().Text = "▶  Word を更新"
+    $btnUpdate.TextFrame.Characters().Text = "Word を更新"
     $btnUpdate.TextFrame.Characters().Font.Bold = $true
     $btnUpdate.TextFrame.Characters().Font.Size = 10
     $btnUpdate.TextFrame.Characters().Font.Color = [int]0xFFFFFF
@@ -140,8 +133,7 @@ try {
     # 「状態リセット」ボタン
     $btnReset = $sheet.Shapes.AddShape(1, 420, 4, 110, 26)
     $btnReset.Name = "btnReset"
-    $btnReset.TextFrame.Characters().Text = "↺  状態リセット"
-    $btnReset.TextFrame.Characters().Font.Bold = $false
+    $btnReset.TextFrame.Characters().Text = "状態リセット"
     $btnReset.TextFrame.Characters().Font.Size = 9
     $btnReset.TextFrame.Characters().Font.Color = [int]0xFFFFFF
     $btnReset.Fill.ForeColor.RGB = [int]0x808080
@@ -152,10 +144,9 @@ try {
     $btnReset.OnAction = "WordUpdater.ResetStatus"
 
     # 「ブックマーク一覧取得」ボタン
-    $btnImport = $sheet.Shapes.AddShape(1, 540, 4, 140, 26)
+    $btnImport = $sheet.Shapes.AddShape(1, 540, 4, 150, 26)
     $btnImport.Name = "btnImport"
-    $btnImport.TextFrame.Characters().Text = "⬇  ブックマーク一覧取得"
-    $btnImport.TextFrame.Characters().Font.Bold = $false
+    $btnImport.TextFrame.Characters().Text = "ブックマーク一覧取得"
     $btnImport.TextFrame.Characters().Font.Size = 9
     $btnImport.TextFrame.Characters().Font.Color = [int]0xFFFFFF
     $btnImport.Fill.ForeColor.RGB = [int]0x538135
@@ -170,23 +161,24 @@ try {
     # ============================================================
     $basFilePath = Join-Path $scriptDir "WordUpdater.bas"
     if (Test-Path $basFilePath) {
-        $vbaCode = Get-Content $basFilePath -Raw -Encoding UTF8
-        # Attribute 行を除去（モジュール名はExcelが管理）
+        # UTF-8 BOM 付きで読み込む（なければ通常 UTF-8）
+        $vbaCode = [System.IO.File]::ReadAllText($basFilePath, [System.Text.Encoding]::UTF8)
+        # Attribute 行を除去
         $vbaCode = $vbaCode -replace 'Attribute VB_Name = "WordUpdater"\r?\n', ''
 
-        $vbaModule = $workbook.VBProject.VBComponents.Add(1)  # 1 = vbext_ct_StdModule
+        $vbaModule = $workbook.VBProject.VBComponents.Add(1)  # vbext_ct_StdModule
         $vbaModule.Name = "WordUpdater"
         $vbaModule.CodeModule.AddFromString($vbaCode)
-        Write-Host "✓ VBA マクロを追加しました。" -ForegroundColor Green
+        Write-Host "VBA マクロを追加しました。" -ForegroundColor Green
     } else {
-        Write-Host "⚠ WordUpdater.bas が見つかりません。マクロは手動でインポートしてください。" -ForegroundColor Yellow
+        Write-Host "WordUpdater.bas が見つかりません。マクロは手動でインポートしてください。" -ForegroundColor Yellow
     }
 
     # ============================================================
     # .xlsm として保存
     # ============================================================
     $workbook.SaveAs($OutputPath, 52)  # 52 = xlOpenXMLWorkbookMacroEnabled
-    Write-Host "✓ ファイルを作成しました: $OutputPath" -ForegroundColor Green
+    Write-Host "ファイルを作成しました: $OutputPath" -ForegroundColor Green
 
 } catch {
     Write-Host ""
@@ -207,10 +199,10 @@ Write-Host "============================================" -ForegroundColor Cyan
 Write-Host " セットアップ完了！" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "次のステップ:" -ForegroundColor White
+Write-Host "次のステップ:"
 Write-Host "  1. Word ドキュメントを開き、Alt+F11 で VBA エディタを起動"
 Write-Host "  2. WordBookmarkHelper.bas をインポートしてブックマークを設定"
 Write-Host "  3. Word更新ツール.xlsm を開き、B1 に Word ファイルのパスを入力"
 Write-Host "  4. A列にブックマーク名、C列に変更後テキストを入力"
-Write-Host "  5. 「▶ Word を更新」ボタンをクリック"
+Write-Host "  5. [Word を更新] ボタンをクリック"
 Write-Host ""
