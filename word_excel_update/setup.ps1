@@ -57,7 +57,7 @@ try {
     $cell.Value2 = "Word テンプレート自動更新ツール - 使い方"
     $cell.Font.Bold = $true
     $cell.Font.Size = 14
-    $cell.Font.Color = [int]0x2E5B9E
+    $cell.Font.Color = [int]0x9E5B2E   # BGR → 表示色 #2E5B9E（濃青）
     $r += 2
 
     # セクション見出しと本文を書くヘルパー関数
@@ -66,8 +66,8 @@ try {
         $hCell.Value2 = $title
         $hCell.Font.Bold = $true
         $hCell.Font.Size = 11
-        $hCell.Font.Color = [int]0x4472C4
-        $hCell.Interior.Color = [int]0xDCE6F1
+        $hCell.Font.Color = [int]0xC47244   # BGR → 表示色 #4472C4（青）
+        $hCell.Interior.Color = [int]0xF1E6DC  # BGR → 表示色 #DCE6F1（薄青）
         $row++
         foreach ($line in $lines) {
             $sheetReadme.Cells.Item($row, 1).Value2 = $line
@@ -129,28 +129,37 @@ try {
     # ============================================================
 
     # 行1: テンプレートファイルパス
-    $sheetMain.Cells.Item(1, 1).Value2 = "テンプレートファイル："
-    $sheetMain.Cells.Item(1, 1).Font.Bold = $true
+    $labelCell1 = $sheetMain.Cells.Item(1, 1)
+    $labelCell1.Value2 = "テンプレートファイル："
+    $labelCell1.Font.Bold = $true
+    $labelCell1.Font.Color = [int]0xFFFFFF          # 白文字
+    $labelCell1.Interior.Color = [int]0x9E5B2E      # BGR → 表示色 #2E5B9E（濃青）
     $pathRange1 = $sheetMain.Range("B1:G1")
     $pathRange1.Merge()
     $pathRange1.Value2 = "C:\Users\username\Documents\template\納品書_テンプレート.docx"
-    $pathRange1.Font.Color = [int]0x333333
+    $pathRange1.Font.Color = [int]0x9E5B2E           # BGR → 表示色 #2E5B9E（濃紺テキスト）
+    $pathRange1.Interior.Color = [int]0xF1E6DC      # BGR → 表示色 #DCE6F1（薄青）
 
     # 行2: 出力ファイルパス
-    $sheetMain.Cells.Item(2, 1).Value2 = "出力ファイル名："
-    $sheetMain.Cells.Item(2, 1).Font.Bold = $true
+    $labelCell2 = $sheetMain.Cells.Item(2, 1)
+    $labelCell2.Value2 = "出力ファイル名："
+    $labelCell2.Font.Bold = $true
+    $labelCell2.Font.Color = [int]0xFFFFFF          # 白文字
+    $labelCell2.Interior.Color = [int]0x9E5B2E      # BGR → 表示色 #2E5B9E（濃青）
     $pathRange2 = $sheetMain.Range("B2:G2")
     $pathRange2.Merge()
     $pathRange2.Value2 = "C:\Users\username\Documents\output\納品書_株式会社ABC_20260401.docx"
-    $pathRange2.Font.Color = [int]0x333333
+    $pathRange2.Font.Color = [int]0x9E5B2E           # BGR → 表示色 #2E5B9E（濃紺テキスト）
+    $pathRange2.Interior.Color = [int]0xF1E6DC      # BGR → 表示色 #DCE6F1（薄青）
 
     # 行3: 注釈
     $noteRange = $sheetMain.Range("A3:G3")
     $noteRange.Merge()
     $noteRange.Value2 = "※ テンプレートをコピーして出力ファイルを作成します。テンプレートは変更されません。変数は `$変数名 の形式で Word に赤字で記述してください。"
-    $noteRange.Font.Color = [int]0x888888
+    $noteRange.Font.Color = [int]0xC47244           # BGR → 表示色 #4472C4（青）
     $noteRange.Font.Size = 9
     $noteRange.Font.Italic = $true
+    $noteRange.Interior.Color = [int]0xFBF3EE       # BGR → 表示色 #EEF3FB（極薄青）
 
     # 行5〜: 変数テーブル
     $dataStart = 5
