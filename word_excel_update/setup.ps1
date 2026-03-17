@@ -62,13 +62,13 @@ try {
     # ---- 行2: 補足説明 ----
     $sheet.Range("A2:F2").Merge()
     $noteCell = $sheet.Cells.Item(2, 1)
-    $noteCell.Value2 = "※ B1 に Word ファイルの絶対パスを入力してください。ブックマーク名は Word 側で事前に設定が必要です。"
+    $noteCell.Value2 = "※ B1 に Word ファイルの絶対パスを入力してください。Word テンプレートの変数は $変数名 の形式で赤字にしておいてください。"
     $noteCell.Font.Color = [int]0x888888
     $noteCell.Font.Size = 9
     $noteCell.Font.Italic = $true
 
     # ---- 行3: ヘッダー ----
-    $headers = @("ブックマーク名", "説明（任意）", "変更後テキスト", "状態")
+    $headers = @("変数名（`$xxx）", "説明（任意）", "変更後テキスト", "状態")
     $headerBgColor = [int]0x4472C4
     $headerFontColor = [int]0xFFFFFF
 
@@ -85,9 +85,9 @@ try {
 
     # ---- 行4〜6: サンプルデータ ----
     $samples = @(
-        @("bm_company_name", "会社名",   "株式会社サンプル商事"),
-        @("bm_date",         "契約日付", "2026年4月1日"),
-        @("bm_amount",       "契約金額", "1,500,000円（税込）")
+        @("`$company_name", "会社名",   "株式会社サンプル商事"),
+        @("`$date",         "契約日付", "2026年4月1日"),
+        @("`$amount",       "契約金額", "1,500,000円（税込）")
     )
 
     $row = 4
@@ -143,10 +143,10 @@ try {
     $btnReset.TextFrame.VerticalAlignment   = -4108
     $btnReset.OnAction = "WordUpdater.ResetStatus"
 
-    # 「ブックマーク一覧取得」ボタン
+    # 「$変数一覧取得」ボタン
     $btnImport = $sheet.Shapes.AddShape(1, 540, 4, 150, 26)
     $btnImport.Name = "btnImport"
-    $btnImport.TextFrame.Characters().Text = "ブックマーク一覧取得"
+    $btnImport.TextFrame.Characters().Text = "`$変数一覧取得"
     $btnImport.TextFrame.Characters().Font.Size = 9
     $btnImport.TextFrame.Characters().Font.Color = [int]0xFFFFFF
     $btnImport.Fill.ForeColor.RGB = [int]0x538135
@@ -154,7 +154,7 @@ try {
     $btnImport.Line.Weight = 1
     $btnImport.TextFrame.HorizontalAlignment = -4108
     $btnImport.TextFrame.VerticalAlignment   = -4108
-    $btnImport.OnAction = "WordUpdater.ImportBookmarkList"
+    $btnImport.OnAction = "WordUpdater.ImportVariableList"
 
     # ============================================================
     # VBA マクロコードを追加
@@ -169,7 +169,7 @@ try {
             if ($null -eq $workbook.VBProject) {
                 throw "VBProject が null です。"
             }
-            $vbaCode = [System.IO.File]::ReadAllText($basFilePath, [System.Text.Encoding]::UTF8)
+            $vbaCode = [System.IO.File]::ReadAllText($basFilePath, [System.Text.Encoding]::GetEncoding(932))
             $vbaCode = $vbaCode -replace 'Attribute VB_Name = "WordUpdater"\r?\n', ''
 
             $vbaModule = $workbook.VBProject.VBComponents.Add(1)  # vbext_ct_StdModule
@@ -230,9 +230,10 @@ Write-Host "次のステップ:"
 if (-not $vbaImported) {
     Write-Host "  [0. まず] Word更新ツール.xlsm を開き、Alt+F11 → ファイル → ファイルのインポート → WordUpdater.bas" -ForegroundColor Yellow
 }
-Write-Host "  1. Word ドキュメントを開き、Alt+F11 で VBA エディタを起動"
-Write-Host "  2. WordBookmarkHelper.bas をインポートしてブックマークを設定"
-Write-Host "  3. Word更新ツール.xlsm を開き、B1 に Word ファイルのパスを入力"
-Write-Host "  4. A列にブックマーク名、C列に変更後テキストを入力"
+Write-Host "  1. Word テンプレートに変数を設定"
+Write-Host "     例: 会社名の箇所を `$company_name と書き、赤字にしておく"
+Write-Host "  2. Word更新ツール.xlsm の B1 に Word ファイルのパスを入力"
+Write-Host "  3. [$変数一覧取得] で変数を自動取り込み（または A列に手入力）"
+Write-Host "  4. C列に変更後テキストを入力"
 Write-Host "  5. [Word を更新] ボタンをクリック"
 Write-Host ""
