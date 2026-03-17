@@ -132,25 +132,25 @@ try {
     $labelCell1 = $sheetMain.Cells.Item(1, 1)
     $labelCell1.Value2 = "テンプレートファイル："
     $labelCell1.Font.Bold = $true
-    $labelCell1.Font.Color = [int]0xFFFFFF          # 白文字
-    $labelCell1.Interior.Color = [int]0x9E5B2E      # BGR → 表示色 #2E5B9E（濃青）
+    $labelCell1.Font.Color = [int]0x333333
+    $labelCell1.Interior.ColorIndex = -4142         # 背景なし
     $pathRange1 = $sheetMain.Range("B1:G1")
     $pathRange1.Merge()
     $pathRange1.Value2 = "C:\Users\username\Documents\template\納品書_テンプレート.docx"
-    $pathRange1.Font.Color = [int]0x9E5B2E           # BGR → 表示色 #2E5B9E（濃紺テキスト）
-    $pathRange1.Interior.Color = [int]0xF1E6DC      # BGR → 表示色 #DCE6F1（薄青）
+    $pathRange1.Font.Color = [int]0x9E5B2E           # BGR → 表示色 #2E5B9E（濃紺）
+    $pathRange1.Interior.ColorIndex = -4142         # 背景なし
 
     # 行2: 出力ファイルパス
     $labelCell2 = $sheetMain.Cells.Item(2, 1)
     $labelCell2.Value2 = "出力ファイル名："
     $labelCell2.Font.Bold = $true
-    $labelCell2.Font.Color = [int]0xFFFFFF          # 白文字
-    $labelCell2.Interior.Color = [int]0x9E5B2E      # BGR → 表示色 #2E5B9E（濃青）
+    $labelCell2.Font.Color = [int]0x333333
+    $labelCell2.Interior.ColorIndex = -4142         # 背景なし
     $pathRange2 = $sheetMain.Range("B2:G2")
     $pathRange2.Merge()
     $pathRange2.Value2 = "C:\Users\username\Documents\output\納品書_株式会社ABC_20260401.docx"
-    $pathRange2.Font.Color = [int]0x9E5B2E           # BGR → 表示色 #2E5B9E（濃紺テキスト）
-    $pathRange2.Interior.Color = [int]0xF1E6DC      # BGR → 表示色 #DCE6F1（薄青）
+    $pathRange2.Font.Color = [int]0x9E5B2E           # BGR → 表示色 #2E5B9E（濃紺）
+    $pathRange2.Interior.ColorIndex = -4142         # 背景なし
 
     # 行3: 注釈
     $noteRange = $sheetMain.Range("A3:G3")
@@ -197,8 +197,8 @@ try {
     $btn.TextFrame.Characters().Font.Bold = $true
     $btn.TextFrame.Characters().Font.Size = 11
     $btn.TextFrame.Characters().Font.Color = [int]0xFFFFFF
-    $btn.Fill.ForeColor.RGB = [int]0x4472C4
-    $btn.Line.ForeColor.RGB = [int]0x2E5B9E
+    $btn.Fill.ForeColor.RGB = [int]0xC47244   # BGR → 表示色 #4472C4（青）
+    $btn.Line.ForeColor.RGB = [int]0x9E5B2E  # BGR → 表示色 #2E5B9E（濃青）
     $btn.Line.Weight = 1
     $btn.TextFrame.HorizontalAlignment = -4108
     $btn.TextFrame.VerticalAlignment   = -4108
