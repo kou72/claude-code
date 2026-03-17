@@ -43,8 +43,8 @@ try {
     $sheetMain = $workbook.Worksheets.Item(1)
     $sheetMain.Name = "変更箇所"
 
-    # README シートを追加（変更箇所の後ろ）
-    $sheetReadme = $workbook.Worksheets.Add([System.Type]::Missing, $sheetMain)
+    # README シートを追加（変更箇所の前＝一番左）
+    $sheetReadme = $workbook.Worksheets.Add($sheetMain)
     $sheetReadme.Name = "README"
 
     # ============================================================
@@ -175,7 +175,7 @@ try {
     $tableRange = $sheetMain.Range("A${dataStart}:C${lastDataRow}")
     $table = $sheetMain.ListObjects.Add(1, $tableRange, [System.Type]::Missing, 1)
     $table.Name = "変数テーブル"
-    $table.TableStyle = "TableStyleMedium2"
+    $table.TableStyle = "TableStyleMedium9"
 
     $table.ListColumns.Item(1).Range.ColumnWidth = 22
     $table.ListColumns.Item(2).Range.ColumnWidth = 18
