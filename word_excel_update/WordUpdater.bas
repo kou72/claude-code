@@ -1,35 +1,31 @@
 Attribute VB_Name = "WordUpdater"
 ' ============================================================
 ' WordUpdater.bas
-' Excel の変数テーブルを使って Word の $変数 を一括置換するマクロ
-'
-' 【Wordテンプレートの準備】
-'   置換したい箇所を $変数名（例: $company_name）にして赤字にしておく
-'   → 置換後も文字色はそのまま維持されます
-'
-' 【Excelの使い方】
-'   1. B1 に Word ファイルの絶対パスを入力
-'   2. テーブルに $変数名 と 変更後テキスト を入力
-'   3. 「Word を更新」ボタンをクリック
+' テンプレート Word をコピーし、$変数 を一括置換して納品ドキュメントを作成するマクロ
 ' ============================================================
 
 Option Explicit
 
-Private Const SHEET_NAME As String = "変更箇所"
-Private Const PATH_CELL  As String = "B1"
-Private Const TABLE_NAME As String = "変数テーブル"
-Private Const COL_VAR    As Long   = 1   ' テーブル列1: $変数名
-Private Const COL_NEW    As Long   = 3   ' テーブル列3: 変更後テキスト
+Private Const SHEET_NAME    As String = "変更箇所"
+Private Const TEMPLATE_CELL As String = "B1"   ' テンプレートファイルパス
+Private Const OUTPUT_CELL   As String = "B2"   ' 出力ファイルパス
+Private Const TABLE_NAME    As String = "変数テーブル"
+Private Const COL_VAR       As Long   = 1      ' テーブル列1: $変数名
+Private Const COL_NEW       As Long   = 3      ' テーブル列3: 変更後テキスト
 
 ' ============================================================
-' メイン処理: $変数 を Excel テーブルの値で置換する
+' メイン処理
+'   1. テンプレートを出力パスへコピー
+'   2. コピー先を開いて $変数 を一括置換
+'   3. 保存（テンプレートは変更しない）
 ' ============================================================
 Public Sub UpdateWordDocument()
     Dim ws           As Worksheet
     Dim tbl          As ListObject
     Dim wdApp        As Object
     Dim wdDoc        As Object
-    Dim wordFilePath As String
+    Dim templatePath As String
+    Dim outputPath   As String
     Dim i            As Long
     Dim varName      As String
     Dim newText      As String
@@ -45,15 +41,36 @@ Public Sub UpdateWordDocument()
         Exit Sub
     End If
 
-    ' Word ファイルパス確認
-    wordFilePath = Trim(ws.Range(PATH_CELL).Value)
-    If wordFilePath = "" Then
-        MsgBox "セル " & PATH_CELL & " に Word ファイルの絶対パスを入力してください。", vbExclamation
+    ' テンプレートパス確認
+    templatePath = Trim(ws.Range(TEMPLATE_CELL).Value)
+    If templatePath = "" Then
+        MsgBox "B1 にテンプレートファイルの絶対パスを入力してください。", vbExclamation
         Exit Sub
     End If
-    If Dir(wordFilePath) = "" Then
-        MsgBox "Word ファイルが見つかりません：" & vbNewLine & wordFilePath, vbExclamation
+    If Dir(templatePath) = "" Then
+        MsgBox "テンプレートファイルが見つかりません：" & vbNewLine & templatePath, vbExclamation
         Exit Sub
+    End If
+
+    ' 出力パス確認
+    outputPath = Trim(ws.Range(OUTPUT_CELL).Value)
+    If outputPath = "" Then
+        MsgBox "B2 に出力ファイルの絶対パスを入力してください。", vbExclamation
+        Exit Sub
+    End If
+
+    ' 出力先ディレクトリの存在確認
+    Dim outputDir As String
+    outputDir = Left(outputPath, InStrRev(outputPath, ""))
+    If outputDir <> "" And Dir(outputDir, vbDirectory) = "" Then
+        MsgBox "出力先のフォルダが存在しません：" & vbNewLine & outputDir, vbExclamation
+        Exit Sub
+    End If
+
+    ' 上書き確認
+    If Dir(outputPath) <> "" Then
+        If MsgBox("出力ファイルが既に存在します。上書きしますか？" & vbNewLine & outputPath, _
+                  vbQuestion + vbYesNo) = vbNo Then Exit Sub
     End If
 
     ' テーブル取得
@@ -69,6 +86,10 @@ Public Sub UpdateWordDocument()
         Exit Sub
     End If
 
+    ' テンプレートを出力パスへコピー
+    On Error GoTo ErrHandler
+    FileCopy templatePath, outputPath
+
     ' Word 起動 / 接続
     On Error Resume Next
     Set wdApp = GetObject(, "Word.Application")
@@ -79,12 +100,8 @@ Public Sub UpdateWordDocument()
     On Error GoTo ErrHandler
     wdApp.Visible = True
 
-    ' ドキュメントを開く
-    Set wdDoc = GetOrOpenDocument(wdApp, wordFilePath)
-    If wdDoc Is Nothing Then
-        MsgBox "Word ドキュメントを開けませんでした。", vbCritical
-        Exit Sub
-    End If
+    ' コピー先を開く
+    Set wdDoc = wdApp.Documents.Open(outputPath)
 
     ' テーブル行をループして置換
     updatedCount = 0
@@ -109,7 +126,9 @@ NextRow:
 
     ' 結果メッセージ
     Dim msg As String
-    msg = "【更新完了】" & vbNewLine & vbNewLine & "置換した変数: " & updatedCount & " 件"
+    msg = "【完了】納品ドキュメントを作成しました。" & vbNewLine & vbNewLine
+    msg = msg & "出力先: " & outputPath & vbNewLine & vbNewLine
+    msg = msg & "置換した変数: " & updatedCount & " 件"
     If notFoundList <> "" Then
         msg = msg & vbNewLine & vbNewLine & "Word に見つからなかった変数：" & notFoundList
     End If
@@ -161,19 +180,3 @@ Private Sub ReplaceInDocument(wdDoc As Object, varName As String, newText As Str
         .Execute Replace:=2         ' wdReplaceAll
     End With
 End Sub
-
-' ============================================================
-' 補助: ドキュメントを取得または開く
-' ============================================================
-Private Function GetOrOpenDocument(wdApp As Object, filePath As String) As Object
-    Dim doc As Object
-    For Each doc In wdApp.Documents
-        If LCase(doc.FullName) = LCase(filePath) Then
-            Set GetOrOpenDocument = doc
-            Exit Function
-        End If
-    Next doc
-    On Error Resume Next
-    Set GetOrOpenDocument = wdApp.Documents.Open(filePath)
-    On Error GoTo 0
-End Function

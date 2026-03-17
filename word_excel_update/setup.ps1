@@ -14,7 +14,6 @@ param(
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-# 出力先の決定
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if ($OutputPath -eq "") {
     $OutputPath = Join-Path $scriptDir "Word更新ツール.xlsm"
@@ -37,88 +36,172 @@ try {
 
     $workbook = $excel.Workbooks.Add()
 
-    # シートを1枚だけ残す
+    # シートを1枚だけ残してリネーム（変更箇所シート）
     while ($workbook.Worksheets.Count -gt 1) {
         $workbook.Worksheets.Item($workbook.Worksheets.Count).Delete()
     }
+    $sheetMain = $workbook.Worksheets.Item(1)
+    $sheetMain.Name = "変更箇所"
 
-    $sheet = $workbook.Worksheets.Item(1)
-    $sheet.Name = "変更箇所"
-
-    # ============================================================
-    # 行1: Word ファイルパス入力欄
-    # ============================================================
-    $labelCell = $sheet.Cells.Item(1, 1)
-    $labelCell.Value2 = "Wordファイルパス："
-    $labelCell.Font.Bold = $true
-
-    $pathRange = $sheet.Range("B1:G1")
-    $pathRange.Merge()
-    $pathRange.Value2 = "C:\Users\username\Documents\テンプレート.docx"
-    $pathRange.Font.Color = [int]0x333333
+    # README シートを追加（変更箇所の後ろ）
+    $sheetReadme = $workbook.Worksheets.Add([System.Type]::Missing, $sheetMain)
+    $sheetReadme.Name = "README"
 
     # ============================================================
-    # 行2: 注釈
+    # README シート
     # ============================================================
-    $noteRange = $sheet.Range("A2:G2")
+    $r = 1
+
+    # タイトル
+    $cell = $sheetReadme.Cells.Item($r, 1)
+    $cell.Value2 = "Word テンプレート自動更新ツール - 使い方"
+    $cell.Font.Bold = $true
+    $cell.Font.Size = 14
+    $cell.Font.Color = [int]0x2E5B9E
+    $r += 2
+
+    # セクション見出しと本文を書くヘルパー関数
+    function Write-Section($row, $title, $lines) {
+        $hCell = $sheetReadme.Cells.Item($row, 1)
+        $hCell.Value2 = $title
+        $hCell.Font.Bold = $true
+        $hCell.Font.Size = 11
+        $hCell.Font.Color = [int]0x4472C4
+        $hCell.Interior.Color = [int]0xDCE6F1
+        $row++
+        foreach ($line in $lines) {
+            $sheetReadme.Cells.Item($row, 1).Value2 = $line
+            $row++
+        }
+        return $row + 1  # セクション後に空行
+    }
+
+    $r = Write-Section $r "■ 概要" @(
+        "Word テンプレートをコピーして、`$変数を置換した納品ドキュメントを作成します。",
+        "テンプレートファイル自体は変更されません。"
+    )
+
+    $r = Write-Section $r "■ Word テンプレートの準備" @(
+        "1. Word で納品物のテンプレートを作成する",
+        "2. 差し替えたい箇所を `$変数名 の形式で記述する",
+        "   例:  会社名の箇所 → `$company_name",
+        "        日付の箇所   → `$date",
+        "        金額の箇所   → `$amount",
+        "3. 変数テキストを赤字にしておく（置換後も赤字のまま残ります）",
+        "4. テンプレートを任意の場所に保存する"
+    )
+
+    $r = Write-Section $r "■ 毎回の操作手順" @(
+        "1. 「変更箇所」シートを開く",
+        "2. B1 にテンプレートファイルの絶対パスを入力",
+        "   例: C:\Users\username\Documents\template\納品書_テンプレート.docx",
+        "3. B2 に出力ファイルの絶対パスを入力（新しいファイル名を指定）",
+        "   例: C:\Users\username\Documents\output\納品書_株式会社ABC_20260401.docx",
+        "4. テーブルに変数と変更後テキストを入力",
+        "   A列: `$変数名（例: `$company_name）",
+        "   C列: 変更後テキスト（例: 株式会社ABC）",
+        "5. 「Word を更新」ボタンをクリック"
+    )
+
+    $r = Write-Section $r "■ 処理の流れ" @(
+        "1. テンプレートファイルを出力ファイル名でコピー",
+        "2. コピーしたファイルを Word で開く",
+        "3. テーブルの `$変数 を一括置換（書式はそのまま維持）",
+        "4. 保存して完了",
+        "",
+        "→ テンプレートファイルは変更されません"
+    )
+
+    $r = Write-Section $r "■ 変数の命名規則" @(
+        "・$ で始める（例: `$company_name）",
+        "・半角英数字とアンダースコアのみ使用可",
+        "・スペース・日本語は使用不可",
+        "",
+        "例: `$company_name / `$date / `$amount / `$project_title / `$delivery_date"
+    )
+
+    # 列幅調整
+    $sheetReadme.Columns.Item(1).ColumnWidth = 80
+    $sheetReadme.Columns.Item(1).WrapText = $true
+
+    # ============================================================
+    # 変更箇所シート
+    # ============================================================
+
+    # 行1: テンプレートファイルパス
+    $sheetMain.Cells.Item(1, 1).Value2 = "テンプレートファイル："
+    $sheetMain.Cells.Item(1, 1).Font.Bold = $true
+    $pathRange1 = $sheetMain.Range("B1:G1")
+    $pathRange1.Merge()
+    $pathRange1.Value2 = "C:\Users\username\Documents\template\納品書_テンプレート.docx"
+    $pathRange1.Font.Color = [int]0x333333
+
+    # 行2: 出力ファイルパス
+    $sheetMain.Cells.Item(2, 1).Value2 = "出力ファイル名："
+    $sheetMain.Cells.Item(2, 1).Font.Bold = $true
+    $pathRange2 = $sheetMain.Range("B2:G2")
+    $pathRange2.Merge()
+    $pathRange2.Value2 = "C:\Users\username\Documents\output\納品書_株式会社ABC_20260401.docx"
+    $pathRange2.Font.Color = [int]0x333333
+
+    # 行3: 注釈
+    $noteRange = $sheetMain.Range("A3:G3")
     $noteRange.Merge()
-    $noteRange.Value2 = "※ Word テンプレートの変数は `$変数名 の形式で赤字にしておいてください。置換後も赤字のまま維持されます。"
+    $noteRange.Value2 = "※ テンプレートをコピーして出力ファイルを作成します。テンプレートは変更されません。変数は `$変数名 の形式で Word に赤字で記述してください。"
     $noteRange.Font.Color = [int]0x888888
     $noteRange.Font.Size = 9
     $noteRange.Font.Italic = $true
 
-    # ============================================================
-    # 行4〜: 変数テーブル（Excel テーブル形式）
-    # ============================================================
-
-    # サンプルデータをセルに書き込む
-    $dataStart = 4
+    # 行5〜: 変数テーブル
+    $dataStart = 5
     $samples = @(
         @('$company_name', "会社名",   "株式会社サンプル商事"),
         @('$date',         "契約日付", "2026年4月1日"),
         @('$amount',       "契約金額", "1,500,000円（税込）")
     )
 
-    # ヘッダー行（行4）
-    $sheet.Cells.Item($dataStart, 1).Value2 = "変数名（`$xxx）"
-    $sheet.Cells.Item($dataStart, 2).Value2 = "説明（任意）"
-    $sheet.Cells.Item($dataStart, 3).Value2 = "変更後テキスト"
+    $sheetMain.Cells.Item($dataStart, 1).Value2 = "変数名（`$xxx）"
+    $sheetMain.Cells.Item($dataStart, 2).Value2 = "説明（任意）"
+    $sheetMain.Cells.Item($dataStart, 3).Value2 = "変更後テキスト"
 
-    # データ行（行5〜7）
-    for ($r = 0; $r -lt $samples.Length; $r++) {
-        $row = $dataStart + 1 + $r
-        $sheet.Cells.Item($row, 1).Value2 = $samples[$r][0]
-        $sheet.Cells.Item($row, 2).Value2 = $samples[$r][1]
-        $sheet.Cells.Item($row, 3).Value2 = $samples[$r][2]
+    for ($i = 0; $i -lt $samples.Length; $i++) {
+        $row = $dataStart + 1 + $i
+        $sheetMain.Cells.Item($row, 1).Value2 = $samples[$i][0]
+        $sheetMain.Cells.Item($row, 2).Value2 = $samples[$i][1]
+        $sheetMain.Cells.Item($row, 3).Value2 = $samples[$i][2]
     }
 
-    # Excel テーブルとして定義（ヘッダー込みの範囲）
     $lastDataRow = $dataStart + $samples.Length
-    $tableRange = $sheet.Range("A${dataStart}:C${lastDataRow}")
-    $table = $sheet.ListObjects.Add(1, $tableRange, [System.Type]::Missing, 1)
+    $tableRange = $sheetMain.Range("A${dataStart}:C${lastDataRow}")
+    $table = $sheetMain.ListObjects.Add(1, $tableRange, [System.Type]::Missing, 1)
     $table.Name = "変数テーブル"
     $table.TableStyle = "TableStyleMedium2"
 
-    # 列幅
     $table.ListColumns.Item(1).Range.ColumnWidth = 22
     $table.ListColumns.Item(2).Range.ColumnWidth = 18
     $table.ListColumns.Item(3).Range.ColumnWidth = 45
 
-    # ============================================================
-    # 「Word を更新」ボタン（行1 右側に配置）
-    # ============================================================
-    $btn = $sheet.Shapes.AddShape(1, 380, 3, 130, 22)
+    # 「Word を更新」ボタン（行1〜2 の右側）
+    $btn = $sheetMain.Shapes.AddShape(1, 460, 3, 130, 36)
     $btn.Name = "btnUpdate"
     $btn.TextFrame.Characters().Text = "Word を更新"
     $btn.TextFrame.Characters().Font.Bold = $true
-    $btn.TextFrame.Characters().Font.Size = 10
+    $btn.TextFrame.Characters().Font.Size = 11
     $btn.TextFrame.Characters().Font.Color = [int]0xFFFFFF
     $btn.Fill.ForeColor.RGB = [int]0x4472C4
     $btn.Line.ForeColor.RGB = [int]0x2E5B9E
     $btn.Line.Weight = 1
-    $btn.TextFrame.HorizontalAlignment = -4108   # xlCenter
-    $btn.TextFrame.VerticalAlignment   = -4108   # xlCenter
+    $btn.TextFrame.HorizontalAlignment = -4108
+    $btn.TextFrame.VerticalAlignment   = -4108
     $btn.OnAction = "WordUpdater.UpdateWordDocument"
+
+    # ウィンドウ枠の固定（4行目まで）
+    $sheetMain.Activate()
+    $excel.ActiveWindow.SplitRow = 4
+    $excel.ActiveWindow.FreezePanes = $true
+
+    # 変更箇所シートをアクティブにして保存
+    $sheetMain.Activate()
 
     # ============================================================
     # VBA マクロを埋め込む
@@ -132,7 +215,7 @@ try {
             $vbaCode = [System.IO.File]::ReadAllText($basFilePath, [System.Text.Encoding]::GetEncoding(932))
             $vbaCode = $vbaCode -replace 'Attribute VB_Name = "WordUpdater"\r?\n', ''
 
-            $vbaModule = $workbook.VBProject.VBComponents.Add(1)   # vbext_ct_StdModule
+            $vbaModule = $workbook.VBProject.VBComponents.Add(1)
             $vbaModule.Name = "WordUpdater"
             $vbaModule.CodeModule.AddFromString($vbaCode)
             $vbaImported = $true
@@ -157,9 +240,7 @@ try {
         Write-Host "WordUpdater.bas が見つかりません。マクロは手動でインポートしてください。" -ForegroundColor Yellow
     }
 
-    # ============================================================
     # 保存
-    # ============================================================
     $workbook.SaveAs($OutputPath, 52)   # 52 = xlOpenXMLWorkbookMacroEnabled
     Write-Host "ファイルを作成しました: $OutputPath" -ForegroundColor Green
 
@@ -190,9 +271,8 @@ Write-Host "次のステップ:"
 if (-not $vbaImported) {
     Write-Host "  [0. まず] Word更新ツール.xlsm を開き、Alt+F11 → ファイル → ファイルのインポート → WordUpdater.bas" -ForegroundColor Yellow
 }
-Write-Host "  1. Word テンプレートに変数を設定"
-Write-Host "     例: 会社名の箇所を `$company_name と書き、赤字にしておく"
-Write-Host "  2. Word更新ツール.xlsm の B1 に Word ファイルのパスを入力"
-Write-Host "  3. テーブルの A列に `$変数名、C列に変更後テキストを入力"
+Write-Host "  1. Word でテンプレートを作成し、変数を `$変数名（赤字）で記述する"
+Write-Host "  2. 「変更箇所」シートの B1 にテンプレートパス、B2 に出力パスを入力"
+Write-Host "  3. テーブルに `$変数名と変更後テキストを入力"
 Write-Host "  4. [Word を更新] ボタンをクリック"
 Write-Host ""
