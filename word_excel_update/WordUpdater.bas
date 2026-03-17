@@ -10,7 +10,7 @@ Attribute VB_Name = "WordUpdater"
 '
 ' 【Wordテンプレートの準備】
 '   変数箇所を $変数名（例: $company_name）にして赤字にしておく
-'   → 置換後は自動的に黒字になります
+'   → 置換後も文字色はそのまま維持されます
 ' ============================================================
 
 Option Explicit
@@ -120,6 +120,7 @@ End Sub
 
 ' ============================================================
 ' ドキュメント内の varName の出現回数を返す
+' Wrap=0(wdFindStop) で末尾で止まりループしない
 ' ============================================================
 Private Function CountInDocument(wdDoc As Object, varName As String) As Long
     Dim rng   As Object
@@ -130,7 +131,7 @@ Private Function CountInDocument(wdDoc As Object, varName As String) As Long
         .ClearFormatting
         .Text           = varName
         .Forward        = True
-        .Wrap           = 1         ' wdFindContinue
+        .Wrap           = 0         ' wdFindStop: 末尾で停止（ループ防止）
         .MatchCase      = True
         .MatchWildcards = False
         Do While .Execute
@@ -141,7 +142,7 @@ Private Function CountInDocument(wdDoc As Object, varName As String) As Long
 End Function
 
 ' ============================================================
-' ドキュメント内の varName を newText で置換（文字色→黒）
+' ドキュメント内の varName を newText で置換（文字色はそのまま維持）
 ' ============================================================
 Private Sub ReplaceInDocument(wdDoc As Object, varName As String, newText As String)
     Dim rng As Object
@@ -149,15 +150,14 @@ Private Sub ReplaceInDocument(wdDoc As Object, varName As String, newText As Str
     With rng.Find
         .ClearFormatting
         .Replacement.ClearFormatting
-        .Text                   = varName
-        .Replacement.Text       = newText
-        .Replacement.Font.Color = COLOR_BLACK
-        .Forward                = True
-        .Wrap                   = 1         ' wdFindContinue
-        .Format                 = True
-        .MatchCase              = True
-        .MatchWildcards         = False
-        .Execute Replace:=2                 ' wdReplaceAll
+        .Text             = varName
+        .Replacement.Text = newText
+        .Forward          = True
+        .Wrap             = 0       ' wdFindStop: 末尾で停止（ループ防止）
+        .Format           = False   ' 書式は変更しない（赤字のまま維持）
+        .MatchCase        = True
+        .MatchWildcards   = False
+        .Execute Replace:=2         ' wdReplaceAll
     End With
 End Sub
 
@@ -197,6 +197,7 @@ Public Sub ImportVariableList()
     If wdDoc Is Nothing Then Exit Sub
 
     ' ワイルドカードで $xxx パターンをスキャン（重複除去）
+    ' Wrap=0(wdFindStop) で末尾で止まりループしない
     ReDim varList(0)
     varCount = 0
 
@@ -205,7 +206,7 @@ Public Sub ImportVariableList()
         .ClearFormatting
         .Text           = "\$[A-Za-z_][A-Za-z0-9_]*"
         .Forward        = True
-        .Wrap           = 1         ' wdFindContinue
+        .Wrap           = 0         ' wdFindStop: 末尾で停止（ループ防止）
         .MatchCase      = False
         .MatchWildcards = True
         Do While .Execute
