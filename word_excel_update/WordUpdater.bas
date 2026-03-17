@@ -19,9 +19,9 @@ Private Const COL_BOOKMARK  As Long   = 1   ' A列: ブックマーク名
 Private Const COL_DESC      As Long   = 2   ' B列: 説明（任意）
 Private Const COL_NEW_TEXT  As Long   = 3   ' C列: 変更後テキスト
 Private Const COL_STATUS    As Long   = 4   ' D列: 状態（済 / 空欄）
-Private Const COLOR_RED     As Long   = RGB(255, 0, 0)
-Private Const COLOR_DONE    As Long   = RGB(0, 128, 0)
-Private Const COLOR_BLACK   As Long   = RGB(0, 0, 0)
+Private Const COLOR_RED     As Long   = 255
+Private Const COLOR_DONE    As Long   = 32768
+Private Const COLOR_BLACK   As Long   = 0
 
 ' ============================================================
 ' メイン処理: Wordドキュメントを更新する
