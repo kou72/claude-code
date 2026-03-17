@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # setup.ps1
 # Excel 更新ツール（Word更新ツール.xlsm）を自動生成するスクリプト
 #
@@ -36,16 +36,22 @@ try {
 
     $workbook = $excel.Workbooks.Add()
 
-    # シートを1枚だけ残してリネーム（変更箇所シート）
+    # シートを1枚だけ残して「変更箇所」にリネーム
     while ($workbook.Worksheets.Count -gt 1) {
         $workbook.Worksheets.Item($workbook.Worksheets.Count).Delete()
     }
     $sheetMain = $workbook.Worksheets.Item(1)
     $sheetMain.Name = "変更箇所"
 
-    # README シートを追加（変更箇所の前＝一番左）
-    $sheetReadme = $workbook.Worksheets.Add($sheetMain)
+    # 「実行」シートを変更箇所の前に追加
+    $sheetExec = $workbook.Worksheets.Add($sheetMain)
+    $sheetExec.Name = "実行"
+
+    # 「README」シートを実行の前（先頭）に追加
+    $sheetReadme = $workbook.Worksheets.Add($sheetExec)
     $sheetReadme.Name = "README"
+
+    # シート順: README | 実行 | 変更箇所
 
     # ============================================================
     # README シート
@@ -57,32 +63,32 @@ try {
     $cell.Value2 = "Word テンプレート自動更新ツール - 使い方"
     $cell.Font.Bold = $true
     $cell.Font.Size = 14
-    $cell.Font.Color = [int]0x9E5B2E   # BGR → 表示色 #2E5B9E（濃青）
+    $cell.Font.Color = [int]0x9E5B2E
     $r += 2
 
-    # セクション見出しと本文を書くヘルパー関数
     function Write-Section($row, $title, $lines) {
         $hCell = $sheetReadme.Cells.Item($row, 1)
         $hCell.Value2 = $title
         $hCell.Font.Bold = $true
         $hCell.Font.Size = 11
-        $hCell.Font.Color = [int]0xC47244   # BGR → 表示色 #4472C4（青）
-        $hCell.Interior.Color = [int]0xF1E6DC  # BGR → 表示色 #DCE6F1（薄青）
+        $hCell.Font.Color = [int]0xC47244
+        $hCell.Interior.Color = [int]0xF1E6DC
         $row++
         foreach ($line in $lines) {
             $sheetReadme.Cells.Item($row, 1).Value2 = $line
             $row++
         }
-        return $row + 1  # セクション後に空行
+        return $row + 1
     }
 
     $r = Write-Section $r "■ 概要" @(
         "Word テンプレートをコピーして、`$変数を置換した納品ドキュメントを作成します。",
+        "「実行」シートでシートと実行フラグを管理し、複数ドキュメントを一括生成できます。",
         "テンプレートファイル自体は変更されません。"
     )
 
     $r = Write-Section $r "■ Word テンプレートの準備" @(
-        "1. Word でテンプレートシートを作成する",
+        "1. Word でテンプレートを作成する",
         "2. 差し替えたい箇所を `$変数名 の形式で記述する",
         "   例:  会社名の箇所 → `$company_name",
         "        日付の箇所   → `$date",
@@ -92,27 +98,91 @@ try {
     )
 
     $r = Write-Section $r "■ 毎回の操作手順" @(
-        "1. 「変更箇所」シートを開く",
-        "2. B1 にテンプレートファイルの絶対パスを入力",
-        "   例: C:\Users\username\Documents\template\ドキュメント_テンプレート.docx",
-        "3. B2 に出力ファイルの絶対パスを入力（新しいファイル名を指定）",
-        "   例: C:\Users\username\Documents\output\ドキュメント_株式会社ABC_20260401.docx",
-        "4. テーブルに変数と変更後テキストを入力",
-        "   A列: `$変数名（例: `$company_name）",
-        "   C列: 変更後テキスト（例: 株式会社ABC）",
-        "5. 「Word を更新」ボタンをクリック"
+        "【各変更箇所シートの設定】",
+        "  C1: テンプレートファイルの絶対パス",
+        "  C2: 出力ファイルの絶対パス（新しいファイル名）",
+        "  テーブル A列: `$変数名、C列: 変更後テキスト",
+        "",
+        "【実行】",
+        "1. 「実行」シートを開く",
+        "2. 実行テーブルのシート名列に処理するシート名を入力",
+        "3. 実行フラグ列を「yes」に設定（プルダウンで選択）",
+        "4. 「一括実行」ボタンをクリック",
+        "5. 確認ダイアログで「はい」を選択"
     )
 
     $r = Write-Section $r "■ 処理の流れ" @(
-        "1. テンプレートファイルを出力ファイル名でコピー",
-        "2. コピーしたファイルを Word で開く",
-        "3. テーブルの `$変数 を一括置換（書式はそのまま維持）",
-        "4. 保存して完了"
+        "1. 実行テーブルで「yes」のシートを順番に処理",
+        "2. テンプレートファイルを出力ファイル名でコピー",
+        "3. コピーしたファイルを Word で開く",
+        "4. テーブルの `$変数 を一括置換（書式はそのまま維持）",
+        "5. 保存して次のシートへ",
+        "6. 全シート完了後に結果サマリーを表示"
     )
 
-    # 列幅調整
     $sheetReadme.Columns.Item(1).ColumnWidth = 80
     $sheetReadme.Columns.Item(1).WrapText = $true
+
+    # ============================================================
+    # 実行シート
+    # ============================================================
+
+    # 行1: タイトル
+    $execTitle = $sheetExec.Cells.Item(1, 1)
+    $execTitle.Value2 = "■ 実行設定"
+    $execTitle.Font.Bold = $true
+    $execTitle.Font.Size = 13
+    $execTitle.Font.Color = [int]0x9E5B2E
+
+    # 行2: 説明
+    $execNote = $sheetExec.Cells.Item(2, 1)
+    $execNote.Value2 = "実行フラグを「yes」に設定したシートを一括処理します。「一括実行」ボタンをクリックしてください。"
+    $execNote.Font.Color = [int]0xC47244
+    $execNote.Font.Size = 9
+    $execNote.Font.Italic = $true
+
+    # 行3: 空行
+    # 行4〜: 実行テーブル
+    $execDataStart = 4
+    $sheetExec.Cells.Item($execDataStart,     1).Value2 = "シート名"
+    $sheetExec.Cells.Item($execDataStart,     2).Value2 = "実行フラグ"
+    $sheetExec.Cells.Item($execDataStart + 1, 1).Value2 = "変更箇所"
+    $sheetExec.Cells.Item($execDataStart + 1, 2).Value2 = "yes"
+
+    $execLastRow = $execDataStart + 1
+    $execTableRange = $sheetExec.Range("A${execDataStart}:B${execLastRow}")
+    $execTable = $sheetExec.ListObjects.Add(1, $execTableRange, [System.Type]::Missing, 1)
+    $execTable.Name = "実行テーブル"
+    $execTable.TableStyle = "TableStyleMedium9"
+
+    $execTable.ListColumns.Item(1).Range.ColumnWidth = 28
+    $execTable.ListColumns.Item(2).Range.ColumnWidth = 14
+
+    # 実行フラグ列にドロップダウン検証を追加
+    $flagBody = $execTable.ListColumns.Item(2).DataBodyRange
+    $flagBody.Validation.Delete()
+    $flagBody.Validation.Add(3, 1, 1, "yes,no")   # xlValidateList=3
+    $flagBody.Validation.IgnoreBlank = $true
+    $flagBody.Validation.InCellDropdown = $true
+
+    # 「一括実行」ボタン（右上）
+    $btnExec = $sheetExec.Shapes.AddShape(1, 350, 3, 140, 36)
+    $btnExec.Name = "btnRunAll"
+    $btnExec.TextFrame.Characters().Text = "一括実行"
+    $btnExec.TextFrame.Characters().Font.Bold = $true
+    $btnExec.TextFrame.Characters().Font.Size = 11
+    $btnExec.TextFrame.Characters().Font.Color = [int]0xFFFFFF
+    $btnExec.Fill.ForeColor.RGB = [int]0xC47244
+    $btnExec.Line.ForeColor.RGB = [int]0x9E5B2E
+    $btnExec.Line.Weight = 1
+    $btnExec.TextFrame.HorizontalAlignment = -4108
+    $btnExec.TextFrame.VerticalAlignment   = -4108
+    $btnExec.OnAction = "WordUpdater.RunAll"
+
+    # ウィンドウ枠の固定（行4 = テーブルヘッダーを常時表示）
+    $sheetExec.Activate()
+    $excel.ActiveWindow.SplitRow = 4
+    $excel.ActiveWindow.FreezePanes = $true
 
     # ============================================================
     # 変更箇所シート
@@ -123,33 +193,33 @@ try {
     $labelCell1.Value2 = "テンプレートファイル："
     $labelCell1.Font.Bold = $true
     $labelCell1.Font.Color = [int]0x333333
-    $labelCell1.Interior.ColorIndex = -4142         # 背景なし
+    $labelCell1.Interior.ColorIndex = -4142
     $pathRange1 = $sheetMain.Range("B1:G1")
     $pathRange1.Merge()
     $pathRange1.Value2 = "C:\Users\username\Documents\template\納品書_テンプレート.docx"
-    $pathRange1.Font.Color = [int]0x9E5B2E           # BGR → 表示色 #2E5B9E（濃紺）
-    $pathRange1.Interior.ColorIndex = -4142         # 背景なし
+    $pathRange1.Font.Color = [int]0x9E5B2E
+    $pathRange1.Interior.ColorIndex = -4142
 
     # 行2: 出力ファイルパス
     $labelCell2 = $sheetMain.Cells.Item(2, 1)
     $labelCell2.Value2 = "出力ファイル名："
     $labelCell2.Font.Bold = $true
     $labelCell2.Font.Color = [int]0x333333
-    $labelCell2.Interior.ColorIndex = -4142         # 背景なし
+    $labelCell2.Interior.ColorIndex = -4142
     $pathRange2 = $sheetMain.Range("B2:G2")
     $pathRange2.Merge()
     $pathRange2.Value2 = "C:\Users\username\Documents\output\納品書_株式会社ABC_20260401.docx"
-    $pathRange2.Font.Color = [int]0x9E5B2E           # BGR → 表示色 #2E5B9E（濃紺）
-    $pathRange2.Interior.ColorIndex = -4142         # 背景なし
+    $pathRange2.Font.Color = [int]0x9E5B2E
+    $pathRange2.Interior.ColorIndex = -4142
 
     # 行3: 注釈
     $noteRange = $sheetMain.Range("A3:G3")
     $noteRange.Merge()
     $noteRange.Value2 = "※ テンプレートをコピーして出力ファイルを作成します。テンプレートは変更されません。変数は `$変数名 の形式で Word に赤字で記述してください。"
-    $noteRange.Font.Color = [int]0xC47244           # BGR → 表示色 #4472C4（青）
+    $noteRange.Font.Color = [int]0xC47244
     $noteRange.Font.Size = 9
     $noteRange.Font.Italic = $true
-    $noteRange.Interior.Color = [int]0xFBF3EE       # BGR → 表示色 #EEF3FB（極薄青）
+    $noteRange.Interior.Color = [int]0xFBF3EE
 
     # 行5〜: 変数テーブル
     $dataStart = 5
@@ -180,27 +250,13 @@ try {
     $table.ListColumns.Item(2).Range.ColumnWidth = 18
     $table.ListColumns.Item(3).Range.ColumnWidth = 45
 
-    # 「Word を更新」ボタン（行1〜2 の右側）
-    $btn = $sheetMain.Shapes.AddShape(1, 460, 3, 130, 36)
-    $btn.Name = "btnUpdate"
-    $btn.TextFrame.Characters().Text = "Word を更新"
-    $btn.TextFrame.Characters().Font.Bold = $true
-    $btn.TextFrame.Characters().Font.Size = 11
-    $btn.TextFrame.Characters().Font.Color = [int]0xFFFFFF
-    $btn.Fill.ForeColor.RGB = [int]0xC47244   # BGR → 表示色 #4472C4（青）
-    $btn.Line.ForeColor.RGB = [int]0x9E5B2E  # BGR → 表示色 #2E5B9E（濃青）
-    $btn.Line.Weight = 1
-    $btn.TextFrame.HorizontalAlignment = -4108
-    $btn.TextFrame.VerticalAlignment   = -4108
-    $btn.OnAction = "WordUpdater.UpdateWordDocument"
-
     # ウィンドウ枠の固定（4行目まで）
     $sheetMain.Activate()
     $excel.ActiveWindow.SplitRow = 4
     $excel.ActiveWindow.FreezePanes = $true
 
-    # 変更箇所シートをアクティブにして保存
-    $sheetMain.Activate()
+    # 実行シートをアクティブにして保存
+    $sheetExec.Activate()
 
     # ============================================================
     # VBA マクロを埋め込む
@@ -271,7 +327,8 @@ if (-not $vbaImported) {
     Write-Host "  [0. まず] Word更新ツール.xlsm を開き、Alt+F11 → ファイル → ファイルのインポート → WordUpdater.bas" -ForegroundColor Yellow
 }
 Write-Host "  1. Word でテンプレートを作成し、変数を `$変数名（赤字）で記述する"
-Write-Host "  2. 「変更箇所」シートの B1 にテンプレートパス、B2 に出力パスを入力"
+Write-Host "  2. 「変更箇所」シートの C1 にテンプレートパス、C2 に出力パスを入力"
 Write-Host "  3. テーブルに `$変数名と変更後テキストを入力"
-Write-Host "  4. [Word を更新] ボタンをクリック"
+Write-Host "  4. 「実行」シートの実行テーブルにシート名を追加し、フラグを「yes」に設定"
+Write-Host "  5. 「一括実行」ボタンをクリック"
 Write-Host ""

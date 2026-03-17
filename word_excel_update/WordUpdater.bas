@@ -1,83 +1,89 @@
 Attribute VB_Name = "WordUpdater"
 ' ============================================================
 ' WordUpdater.bas
-' テンプレート Word をコピーし、$変数 を一括置換して納品ドキュメントを作成するマクロ
+' 実行テーブルで yes のシートを一括処理して Word 納品ドキュメントを生成する
 ' ============================================================
 Option Explicit
-Private Const SHEET_NAME    As String = "変更箇所"
-Private Const TEMPLATE_CELL As String = "C1"   ' テンプレートファイルパス
-Private Const OUTPUT_CELL   As String = "C2"   ' 出力ファイルパス
-Private Const TABLE_NAME    As String = "変数テーブル"
-Private Const COL_VAR       As Long = 1        ' テーブル列1: $変数名
-Private Const COL_NEW       As Long = 3        ' テーブル列3: 変更後テキスト
+
+Private Const EXEC_SHEET_NAME As String = "実行"
+Private Const EXEC_TABLE_NAME As String = "実行テーブル"
+Private Const EXEC_COL_SHEET  As Long = 1    ' 実行テーブル列1: シート名
+Private Const EXEC_COL_FLAG   As Long = 2    ' 実行テーブル列2: 実行フラグ
+
+Private Const TEMPLATE_CELL   As String = "C1"   ' 各変更箇所シート: テンプレートパス
+Private Const OUTPUT_CELL     As String = "C2"   ' 各変更箇所シート: 出力パス
+Private Const TABLE_NAME      As String = "変数テーブル"
+Private Const COL_VAR         As Long = 1    ' 変数テーブル列1: $変数名
+Private Const COL_NEW         As Long = 3    ' 変数テーブル列3: 変更後テキスト
+
 ' ============================================================
-' メイン処理
-'   1. テンプレートを出力パスへコピー
-'   2. コピー先を開いて $変数 を一括置換
-'   3. 保存（テンプレートは変更しない）
+' エントリポイント: 実行テーブルで yes のシートを一括処理
 ' ============================================================
-Public Sub UpdateWordDocument()
-    Dim ws           As Worksheet
-    Dim tbl          As ListObject
-    Dim wdApp        As Object
-    Dim wdDoc        As Object
-    Dim templatePath As String
-    Dim outputPath   As String
-    Dim i            As Long
-    Dim varName      As String
-    Dim newText      As String
-    Dim updatedCount As Long
-    Dim notFoundList As String
-    ' シート取得
+Public Sub RunAll()
+    Dim execWs      As Worksheet
+    Dim execTbl     As ListObject
+    Dim wdApp       As Object
+    Dim i           As Long
+    Dim sName       As String
+    Dim sFlag       As String
+    Dim targets()   As String
+    Dim targetCount As Long
+    Dim ws          As Worksheet
+    Dim outPath     As String
+    Dim updCnt      As Long
+    Dim notFound    As String
+    Dim errMsg      As String
+    Dim confirmMsg  As String
+    Dim summaryLines As String
+    Dim successCount As Long
+    Dim resultMsg   As String
+
+    ' 実行シート取得
     On Error Resume Next
-    Set ws = ThisWorkbook.Sheets(SHEET_NAME)
+    Set execWs = ThisWorkbook.Sheets(EXEC_SHEET_NAME)
     On Error GoTo 0
-    If ws Is Nothing Then
-        MsgBox "シート「" & SHEET_NAME & "」が見つかりません。", vbExclamation
+    If execWs Is Nothing Then
+        MsgBox "シート「" & EXEC_SHEET_NAME & "」が見つかりません。", vbExclamation
         Exit Sub
     End If
-    ' テンプレートパス確認
-    templatePath = Trim(ws.Range(TEMPLATE_CELL).Value)
-    If templatePath = "" Then
-        MsgBox "C1 にテンプレートファイルの絶対パスを入力してください。", vbExclamation
-        Exit Sub
-    End If
-    If Dir(templatePath) = "" Then
-        MsgBox "テンプレートファイルが見つかりません：" & vbNewLine & templatePath, vbExclamation
-        Exit Sub
-    End If
-    ' 出力パス確認
-    outputPath = Trim(ws.Range(OUTPUT_CELL).Value)
-    If outputPath = "" Then
-        MsgBox "C2 に出力ファイルの絶対パスを入力してください。", vbExclamation
-        Exit Sub
-    End If
-    ' 出力先ディレクトリが存在しない場合は自動作成
-    Dim outputDir As String
-    outputDir = Left(outputPath, InStrRev(outputPath, "\"))
-    If outputDir <> "" And Dir(outputDir, vbDirectory) = "" Then
-        Call CreateFolderRecursive(outputDir)
-    End If
-    ' 上書き確認
-    If Dir(outputPath) <> "" Then
-        If MsgBox("出力ファイルが既に存在します。上書きしますか？" & vbNewLine & outputPath, _
-                  vbQuestion + vbYesNo) = vbNo Then Exit Sub
-    End If
-    ' テーブル取得
+
+    ' 実行テーブル取得
     On Error Resume Next
-    Set tbl = ws.ListObjects(TABLE_NAME)
+    Set execTbl = execWs.ListObjects(EXEC_TABLE_NAME)
     On Error GoTo 0
-    If tbl Is Nothing Then
-        MsgBox "テーブル「" & TABLE_NAME & "」が見つかりません。", vbExclamation
+    If execTbl Is Nothing Then
+        MsgBox "テーブル「" & EXEC_TABLE_NAME & "」が見つかりません。", vbExclamation
         Exit Sub
     End If
-    If tbl.ListRows.Count = 0 Then
-        MsgBox "テーブルにデータがありません。", vbExclamation
+    If execTbl.ListRows.Count = 0 Then
+        MsgBox "実行テーブルにデータがありません。", vbExclamation
         Exit Sub
     End If
-    ' テンプレートを出力パスへコピー
-    On Error GoTo ErrHandler
-    FileCopy templatePath, outputPath
+
+    ' flag="yes" の対象シートを収集
+    targetCount = 0
+    ReDim targets(execTbl.ListRows.Count - 1)
+    For i = 1 To execTbl.ListRows.Count
+        sName = Trim(execTbl.ListRows(i).Range.Cells(1, EXEC_COL_SHEET).Value)
+        sFlag = LCase(Trim(execTbl.ListRows(i).Range.Cells(1, EXEC_COL_FLAG).Value))
+        If sName <> "" And sFlag = "yes" Then
+            targets(targetCount) = sName
+            targetCount = targetCount + 1
+        End If
+    Next i
+    If targetCount = 0 Then
+        MsgBox "実行フラグが「yes」のシートがありません。", vbExclamation
+        Exit Sub
+    End If
+
+    ' 実行確認
+    confirmMsg = "以下の " & targetCount & " シートを処理します：" & vbNewLine & vbNewLine
+    For i = 0 To targetCount - 1
+        confirmMsg = confirmMsg & "  ・" & targets(i) & vbNewLine
+    Next i
+    confirmMsg = confirmMsg & vbNewLine & "実行しますか？"
+    If MsgBox(confirmMsg, vbQuestion + vbYesNo, "一括実行確認") = vbNo Then Exit Sub
+
     ' Word 起動 / 接続
     On Error Resume Next
     Set wdApp = GetObject(, "Word.Application")
@@ -87,11 +93,116 @@ Public Sub UpdateWordDocument()
     End If
     On Error GoTo ErrHandler
     wdApp.Visible = True
-    ' コピー先を開く
-    Set wdDoc = wdApp.Documents.Open(outputPath)
-    ' テーブル行をループして置換
+
+    ' 各シートを処理
+    successCount = 0
+    summaryLines = ""
+    For i = 0 To targetCount - 1
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Sheets(targets(i))
+        On Error GoTo ErrHandler
+        If ws Is Nothing Then
+            summaryLines = summaryLines & vbNewLine & "■ " & targets(i) & " [エラー]" & vbNewLine
+            summaryLines = summaryLines & "  シートが見つかりません"
+        Else
+            outPath = ""
+            updCnt = 0
+            notFound = ""
+            errMsg = ProcessSheet(ws, wdApp, outPath, updCnt, notFound)
+            If errMsg = "" Then
+                successCount = successCount + 1
+                summaryLines = summaryLines & vbNewLine & "■ " & targets(i) & vbNewLine
+                summaryLines = summaryLines & "  出力: " & outPath & "（" & updCnt & " 変数置換）"
+                If notFound <> "" Then
+                    summaryLines = summaryLines & vbNewLine & "  ※ 見つからなかった変数:" & notFound
+                End If
+            Else
+                summaryLines = summaryLines & vbNewLine & "■ " & targets(i) & " [エラー]" & vbNewLine
+                summaryLines = summaryLines & "  " & errMsg
+            End If
+        End If
+    Next i
+
+    ' 結果表示
+    resultMsg = "【完了】一括処理が終わりました。" & vbNewLine & vbNewLine
+    resultMsg = resultMsg & "成功: " & successCount & " 件 / 対象: " & targetCount & " 件"
+    If summaryLines <> "" Then
+        resultMsg = resultMsg & vbNewLine & summaryLines
+    End If
+    MsgBox resultMsg, vbInformation, "Word 更新ツール"
+    Exit Sub
+
+ErrHandler:
+    MsgBox "エラーが発生しました：" & vbNewLine & Err.Description, vbCritical, "エラー"
+End Sub
+
+' ============================================================
+' 補助: 1シート分の Word 更新処理
+'   戻り値: "" = 成功 / それ以外 = エラーメッセージ
+' ============================================================
+Private Function ProcessSheet(ws As Worksheet, wdApp As Object, _
+                               ByRef outPath As String, _
+                               ByRef updatedCount As Long, _
+                               ByRef notFoundList As String) As String
+    Dim tbl          As ListObject
+    Dim wdDoc        As Object
+    Dim templatePath As String
+    Dim outputDir    As String
+    Dim i            As Long
+    Dim varName      As String
+    Dim newText      As String
+
+    ProcessSheet = ""
+    outPath = ""
     updatedCount = 0
     notFoundList = ""
+
+    ' テンプレートパス確認
+    templatePath = Trim(ws.Range(TEMPLATE_CELL).Value)
+    If templatePath = "" Then
+        ProcessSheet = "C1 にテンプレートパスが入力されていません"
+        Exit Function
+    End If
+    If Dir(templatePath) = "" Then
+        ProcessSheet = "テンプレートが見つかりません: " & templatePath
+        Exit Function
+    End If
+
+    ' 出力パス確認
+    outPath = Trim(ws.Range(OUTPUT_CELL).Value)
+    If outPath = "" Then
+        ProcessSheet = "C2 に出力パスが入力されていません"
+        Exit Function
+    End If
+
+    ' 出力先ディレクトリが存在しない場合は自動作成
+    outputDir = Left(outPath, InStrRev(outPath, "\"))
+    If outputDir <> "" And Dir(outputDir, vbDirectory) = "" Then
+        Call CreateFolderRecursive(outputDir)
+    End If
+
+    ' テーブル取得
+    On Error Resume Next
+    Set tbl = ws.ListObjects(TABLE_NAME)
+    On Error GoTo 0
+    If tbl Is Nothing Then
+        ProcessSheet = "テーブル「" & TABLE_NAME & "」が見つかりません"
+        Exit Function
+    End If
+    If tbl.ListRows.Count = 0 Then
+        ProcessSheet = "テーブルにデータがありません"
+        Exit Function
+    End If
+
+    ' テンプレートを出力パスへコピー
+    On Error GoTo ErrExit
+    FileCopy templatePath, outPath
+
+    ' コピー先を Word で開く
+    Set wdDoc = wdApp.Documents.Open(outPath)
+
+    ' 置換ループ
     For i = 1 To tbl.ListRows.Count
         varName = Trim(tbl.ListRows(i).Range.Cells(1, COL_VAR).Value)
         newText = tbl.ListRows(i).Range.Cells(1, COL_NEW).Value
@@ -100,24 +211,22 @@ Public Sub UpdateWordDocument()
             Call ReplaceInDocument(wdDoc, varName, newText)
             updatedCount = updatedCount + 1
         Else
-            notFoundList = notFoundList & vbNewLine & "  ・" & varName
+            notFoundList = notFoundList & " " & varName
         End If
 NextRow:
     Next i
     wdDoc.Save
-    ' 結果メッセージ
-    Dim msg As String
-    msg = "【完了】納品ドキュメントを作成しました。" & vbNewLine & vbNewLine
-    msg = msg & "出力先: " & outputPath & vbNewLine & vbNewLine
-    msg = msg & "置換した変数: " & updatedCount & " 件"
-    If notFoundList <> "" Then
-        msg = msg & vbNewLine & vbNewLine & "Word に見つからなかった変数：" & notFoundList
+    Exit Function
+
+ErrExit:
+    ProcessSheet = Err.Description
+    If Not wdDoc Is Nothing Then
+        On Error Resume Next
+        wdDoc.Close SaveChanges:=False
+        On Error GoTo 0
     End If
-    MsgBox msg, vbInformation, "Word 更新ツール"
-    Exit Sub
-ErrHandler:
-    MsgBox "エラーが発生しました：" & vbNewLine & Err.Description, vbCritical, "エラー"
-End Sub
+End Function
+
 ' ============================================================
 ' 補助: 文書内の varName の出現回数を返す
 ' ============================================================
@@ -139,6 +248,7 @@ Private Function CountInDocument(wdDoc As Object, varName As String) As Long
     End With
     CountInDocument = count
 End Function
+
 ' ============================================================
 ' 補助: 文書内の varName を newText で置換（書式は維持）
 ' ============================================================
@@ -158,6 +268,7 @@ Private Sub ReplaceInDocument(wdDoc As Object, varName As String, newText As Str
         .Execute Replace:=2         ' wdReplaceAll
     End With
 End Sub
+
 ' ============================================================
 ' 補助: フォルダを再帰的に作成（存在しない親フォルダも含めて作成）
 ' ============================================================
