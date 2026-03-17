@@ -160,16 +160,39 @@ try {
     # VBA マクロコードを追加
     # ============================================================
     $basFilePath = Join-Path $scriptDir "WordUpdater.bas"
+    $vbaImported = $false
     if (Test-Path $basFilePath) {
-        # UTF-8 BOM 付きで読み込む（なければ通常 UTF-8）
-        $vbaCode = [System.IO.File]::ReadAllText($basFilePath, [System.Text.Encoding]::UTF8)
-        # Attribute 行を除去
-        $vbaCode = $vbaCode -replace 'Attribute VB_Name = "WordUpdater"\r?\n', ''
+        # VBProject へのアクセスを試みる
+        # 失敗する場合は Excel のセキュリティ設定で
+        # 「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」を有効にしてください
+        try {
+            if ($null -eq $workbook.VBProject) {
+                throw "VBProject が null です。"
+            }
+            $vbaCode = [System.IO.File]::ReadAllText($basFilePath, [System.Text.Encoding]::UTF8)
+            $vbaCode = $vbaCode -replace 'Attribute VB_Name = "WordUpdater"\r?\n', ''
 
-        $vbaModule = $workbook.VBProject.VBComponents.Add(1)  # vbext_ct_StdModule
-        $vbaModule.Name = "WordUpdater"
-        $vbaModule.CodeModule.AddFromString($vbaCode)
-        Write-Host "VBA マクロを追加しました。" -ForegroundColor Green
+            $vbaModule = $workbook.VBProject.VBComponents.Add(1)  # vbext_ct_StdModule
+            $vbaModule.Name = "WordUpdater"
+            $vbaModule.CodeModule.AddFromString($vbaCode)
+            $vbaImported = $true
+            Write-Host "VBA マクロを追加しました。" -ForegroundColor Green
+        } catch {
+            Write-Host ""
+            Write-Host "[警告] VBA マクロの自動埋め込みに失敗しました。" -ForegroundColor Yellow
+            Write-Host "  原因: $($_.Exception.Message)" -ForegroundColor Gray
+            Write-Host ""
+            Write-Host "  【対処方法】Excel のセキュリティ設定を変更してください:" -ForegroundColor Yellow
+            Write-Host "    1. Excel を起動"
+            Write-Host "    2. ファイル → オプション → セキュリティセンター"
+            Write-Host "    3. セキュリティセンターの設定 → マクロの設定"
+            Write-Host "    4. [VBA プロジェクト オブジェクト モデルへのアクセスを信頼する] にチェック"
+            Write-Host "    5. OK で閉じて、再度 setup.ps1 を実行"
+            Write-Host ""
+            Write-Host "  または、Excel ファイルを開いた後に手動でマクロをインポートできます:"
+            Write-Host "    Alt+F11 → ファイル → ファイルのインポート → WordUpdater.bas"
+            Write-Host ""
+        }
     } else {
         Write-Host "WordUpdater.bas が見つかりません。マクロは手動でインポートしてください。" -ForegroundColor Yellow
     }
@@ -196,10 +219,17 @@ try {
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host " セットアップ完了！" -ForegroundColor Cyan
+if ($vbaImported) {
+    Write-Host " セットアップ完了！" -ForegroundColor Cyan
+} else {
+    Write-Host " Excel ファイルを作成しました（マクロは手動で追加が必要）" -ForegroundColor Yellow
+}
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "次のステップ:"
+if (-not $vbaImported) {
+    Write-Host "  [0. まず] Word更新ツール.xlsm を開き、Alt+F11 → ファイル → ファイルのインポート → WordUpdater.bas" -ForegroundColor Yellow
+}
 Write-Host "  1. Word ドキュメントを開き、Alt+F11 で VBA エディタを起動"
 Write-Host "  2. WordBookmarkHelper.bas をインポートしてブックマークを設定"
 Write-Host "  3. Word更新ツール.xlsm を開き、B1 に Word ファイルのパスを入力"
