@@ -34,6 +34,7 @@ Public Sub RunAll()
     Dim summaryLines As String
     Dim successCount As Long
     Dim resultMsg   As String
+    Dim wdCreated   As Boolean
 
     ' 実行シート取得
     On Error Resume Next
@@ -87,6 +88,7 @@ Public Sub RunAll()
     If Err.Number <> 0 Then
         Err.Clear
         Set wdApp = CreateObject("Word.Application")
+        wdCreated = True
     End If
     On Error GoTo ErrHandler
     wdApp.Visible = True
@@ -128,6 +130,7 @@ Public Sub RunAll()
         resultMsg = resultMsg & vbNewLine & summaryLines
     End If
     MsgBox resultMsg, vbInformation, "Word 更新ツール"
+    If wdCreated Then wdApp.Quit
     Exit Sub
 
 ErrHandler:
@@ -158,7 +161,7 @@ Private Function ProcessSheet(ws As Worksheet, wdApp As Object, _
     ' テンプレートパス確認
     templatePath = Trim(ws.Range(TEMPLATE_CELL).Value)
     If templatePath = "" Then
-        ProcessSheet = "C1 にテンプレートパスが入力されていません"
+        ProcessSheet = "B1 にテンプレートパスが入力されていません"
         Exit Function
     End If
     If Dir(templatePath) = "" Then
@@ -169,7 +172,7 @@ Private Function ProcessSheet(ws As Worksheet, wdApp As Object, _
     ' 出力パス確認
     outPath = Trim(ws.Range(OUTPUT_CELL).Value)
     If outPath = "" Then
-        ProcessSheet = "C2 に出力パスが入力されていません"
+        ProcessSheet = "B2 に出力パスが入力されていません"
         Exit Function
     End If
 
@@ -210,7 +213,7 @@ Private Function ProcessSheet(ws As Worksheet, wdApp As Object, _
         End If
 NextRow:
     Next i
-    wdDoc.Save
+    wdDoc.Close SaveChanges:=True
     Exit Function
 
 ErrExit:
