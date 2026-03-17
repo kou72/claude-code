@@ -59,12 +59,11 @@ Public Sub UpdateWordDocument()
         Exit Sub
     End If
 
-    ' 出力先ディレクトリの存在確認
+    ' 出力先ディレクトリが存在しない場合は自動作成
     Dim outputDir As String
-    outputDir = Left(outputPath, InStrRev(outputPath, ""))
+    outputDir = Left(outputPath, InStrRev(outputPath, "\"))
     If outputDir <> "" And Dir(outputDir, vbDirectory) = "" Then
-        MsgBox "出力先のフォルダが存在しません：" & vbNewLine & outputDir, vbExclamation
-        Exit Sub
+        Call CreateFolderRecursive(outputDir)
     End If
 
     ' 上書き確認
@@ -179,4 +178,18 @@ Private Sub ReplaceInDocument(wdDoc As Object, varName As String, newText As Str
         .MatchWildcards   = False
         .Execute Replace:=2         ' wdReplaceAll
     End With
+End Sub
+
+' ============================================================
+' 補助: フォルダを再帰的に作成（存在しない親フォルダも含めて作成）
+' ============================================================
+Private Sub CreateFolderRecursive(folderPath As String)
+    If folderPath = "" Then Exit Sub
+    If Dir(folderPath, vbDirectory) <> "" Then Exit Sub
+    Dim parentPath As String
+    parentPath = Left(folderPath, InStrRev(folderPath, "\") - 1)
+    If parentPath <> "" And parentPath <> Left(folderPath, 2) Then
+        Call CreateFolderRecursive(parentPath)
+    End If
+    MkDir folderPath
 End Sub
