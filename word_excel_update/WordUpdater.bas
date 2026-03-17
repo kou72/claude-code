@@ -10,11 +10,8 @@ Private Const EXEC_TABLE_NAME As String = "実行テーブル"
 Private Const EXEC_COL_SHEET  As Long = 1    ' 実行テーブル列1: シート名
 Private Const EXEC_COL_FLAG   As Long = 2    ' 実行テーブル列2: 実行フラグ
 
-Private Const TEMPLATE_CELL   As String = "C1"   ' 各変更箇所シート: テンプレートパス
-Private Const OUTPUT_CELL     As String = "C2"   ' 各変更箇所シート: 出力パス
-Private Const TABLE_NAME      As String = "変数テーブル"
-Private Const COL_VAR         As Long = 1    ' 変数テーブル列1: $変数名
-Private Const COL_NEW         As Long = 3    ' 変数テーブル列3: 変更後テキスト
+Private Const TEMPLATE_CELL   As String = "B1"   ' 各変更箇所シート: テンプレートパス
+Private Const OUTPUT_CELL     As String = "B2"   ' 各変更箇所シート: 出力パス
 
 ' ============================================================
 ' エントリポイント: 実行テーブルで yes のシートを一括処理
@@ -202,8 +199,8 @@ Private Function ProcessSheet(ws As Worksheet, wdApp As Object, _
 
     ' 置換ループ
     For i = 1 To tbl.ListRows.Count
-        varName = Trim(tbl.ListRows(i).Range.Cells(1, COL_VAR).Value)
-        newText = tbl.ListRows(i).Range.Cells(1, COL_NEW).Value
+        varName = Trim(tbl.ListRows(i).Range.Cells(1, 1).Value)
+        newText = tbl.ListRows(i).Range.Cells(1, 3).Value
         If varName = "" Or Left(varName, 1) <> "$" Then GoTo NextRow
         If CountInDocument(wdDoc, varName) > 0 Then
             Call ReplaceInDocument(wdDoc, varName, newText)
