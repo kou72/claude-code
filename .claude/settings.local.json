@@ -3,7 +3,8 @@
     "allow": [
       "Bash(*)",
       "WebSearch",
-      "WebFetch"
+      "WebFetch",
+      "mcp__notion__*"
     ],
     "deny": [
       "Bash(rm -rf *)",
